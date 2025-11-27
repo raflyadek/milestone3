@@ -7,14 +7,14 @@ import (
 )
 
 type DonationDTO struct {
-	ID          uint      `json:"id,omitempty"`
-	UserID      uint      `json:"user_id,omitempty"`
-	Title       string    `json:"title,omitempty"`
-	Description string    `json:"description,omitempty"`
-	Category    string    `json:"category,omitempty"`
-	Condition   string    `json:"condition,omitempty"`
-	Status      string    `json:"status,omitempty"`
-	Photos      []string  `json:"photos,omitempty"`
+	ID          uint      `json:"id,omitempty" validate:"omitempty"`
+	UserID      uint      `json:"user_id,omitempty" validate:"required"`
+	Title       string    `json:"title,omitempty" validate:"required"`
+	Description string    `json:"description,omitempty" validate:"required"`
+	Category    string    `json:"category,omitempty" validate:"required"`
+	Condition   string    `json:"condition,omitempty" validate:"required"`
+	Status      string    `json:"status,omitempty" validate:"required"`
+	Photos      []string  `json:"photos,omitempty" validate:"dive,url"`
 	CreatedAt   time.Time `json:"created_at,omitempty"`
 }
 
