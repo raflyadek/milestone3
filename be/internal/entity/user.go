@@ -6,4 +6,10 @@ type Users struct {
 	Email string
 	Password string
 	RoleId int
+	Role Role `gorm:"foreignKey:RoleId;references:Id"`
+}
+
+type Role struct {
+	Id int
+	Name string
 }

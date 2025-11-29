@@ -12,3 +12,8 @@ type UserResponse struct {
 	Email string `json:"email"`
 	RoleId int `json:"role_id"`
 }
+
+type UserLoginRequest struct {
+	Email string `json:"email" validate:"required,email"` 
+	Password string `json:"password" validate:"required,gte=8"` 	
+}

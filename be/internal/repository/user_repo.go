@@ -25,7 +25,7 @@ func (ur *UserRepo) Create(user *entity.Users) error {
 }
 
 func (ur *UserRepo) GetByEmail(email string) (user entity.Users, err error) {
-	if err := ur.db.WithContext(ur.ctx).First(&user, "email = ?", email).Error; err != nil {
+	if err := ur.db.WithContext(ur.ctx).Preload("Role").First(&user, "email = ?", email).Error; err != nil {
 		return entity.Users{}, err
 	}
 

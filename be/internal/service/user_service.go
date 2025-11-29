@@ -4,6 +4,7 @@ import (
 	"log"
 	"milestone3/be/internal/dto"
 	"milestone3/be/internal/entity"
+	"milestone3/be/internal/utils"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -69,5 +70,25 @@ func (us *UserServ) GetUserById(id int) (res dto.UserResponse, err error) {
 }
 
 func (us *UserServ) GetUserByEmail(email, password string) (accessToken string, err error) {
-	
+	user, err := us.userRepo.GetByEmail(email) 
+	if err != nil {
+		log.Println("failed get user by email")
+		return "", err
+	}		
+
+	//validation??
+
+	//compare hash pass and input pass
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		log.Println("failed to compare password hash")
+		return "", err
+	}
+
+	token, err := utils.GenerateJwtToken(email, user.Role.Name, user.Id)
+	if err != nil {
+		log.Println("failed to generate jwt token")
+		return "", err
+	}
+
+	return token, nil
 }
