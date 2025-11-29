@@ -47,19 +47,11 @@ This platform enables efficient management of donated goods through a dual-chann
 
 ## Key Features
 
-### For Donors
+### For User
 - Submit donations with detailed descriptions and photos
 - Track donation status in real-time
 - View complete donation history
 - Receive notifications on item outcomes
-
-### For Verifiers
-- Review pending donation submissions
-- Assess physical condition and categorization
-- Determine auction eligibility
-- Upload verification photos and notes
-
-### For Bidders
 - Browse active auction items by category
 - Place real-time bids on items
 - View bid history and current highest bid
@@ -67,6 +59,10 @@ This platform enables efficient management of donated goods through a dual-chann
 - Track auction participation history
 
 ### For Admins
+- Review pending donation submissions
+- Assess physical condition and categorization
+- Determine auction eligibility
+- Upload verification photos and notes
 - Comprehensive dashboard with analytics
 - Manage auction sessions and scheduling
 - User and institution management
@@ -729,7 +725,7 @@ For questions, issues, or contributions, please open an issue on the repository 
 **Testing**: Run tests with `go test ./...`
 
 --- 
-Contributor
+## Contributor
 - Rafly Ade Kusuma
 - Deden Ruslan
 - Aisiya Qutwatunnada
