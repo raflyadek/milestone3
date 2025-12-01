@@ -17,7 +17,7 @@ type PaymentController struct {
 	validate *validator.Validate
 }
 
-func NewPaymentController(ps PaymentService, validate *validator.Validate) *PaymentController {
+func NewPaymentController(validate *validator.Validate, ps PaymentService) *PaymentController {
 	return &PaymentController{paymentService:ps, validate: validate}
 }
 
