@@ -23,49 +23,34 @@ func main() {
 
 	//dependency injection
 	// create GCS client
-	var gcsRepo repository.GCSStorageRepo
 	if bucket := os.Getenv("GCS_BUCKET"); bucket != "" {
 		gcsClient, err := storage.NewClient(ctx)
 		if err != nil {
 			log.Fatalf("failed to create gcs client: %v", err)
 		}
-		gcsRepo = repository.NewGCSStorageRepo(gcsClient, bucket)
+		// create GCS repo but don't store it since it's not used elsewhere yet
+		_ = repository.NewGCSStorageRepo(gcsClient, bucket)
 	} else {
 		log.Println("GCS_BUCKET not set — file uploads to GCS will fail if used")
 	}
 	//repository
 	userRepo := repository.NewUserRepo(db, ctx)
-	articleRepo := repository.NewArticleRepo(db)
-	donationRepo := repository.NewDonationRepo(db)
-	finalDonationRepo := repository.NewFinalDonationRepository(db)
+	paymentRepo := repository.NewPaymentRepository(db, ctx)
 
 	//service
 	userServ := service.NewUserService(userRepo)
-	articleSvc := service.NewArticleService(articleRepo)
-	donationSvc := service.NewDonationService(donationRepo)
-	finalDonationSvc := service.NewFinalDonationService(finalDonationRepo)
+	paymentServ := service.NewPaymentService(paymentRepo)
 
 	//controller
 	userControl := controller.NewUserController(validator, userServ)
-	articleCtrl := controller.NewArticleController(articleSvc)
-	// donation controller needs storage repo; pass nil-safe repo if not configured
-	var donationCtrl *controller.DonationController
-	if gcsRepo != nil {
-		donationCtrl = controller.NewDonationController(donationSvc, gcsRepo)
-	} else {
-		// repository package defines interface; create a no-op implementation if needed,
-		// but here we pass nil — ensure controller handles nil storage or set a stub.
-		donationCtrl = controller.NewDonationController(donationSvc, nil)
-	}
-	finalDonationCtrl := controller.NewFinalDonationController(finalDonationSvc)
+	paymentControl := controller.NewPaymentController(validator, paymentServ)
+
 	//echo
 	e := echo.New()
 	//router
 	router := routes.NewRouter(e)
 	router.RegisterUserRoutes(userControl)
-	router.RegisterArticleRoutes(articleCtrl)
-	router.RegisterDonationRoutes(donationCtrl)
-	router.RegisterFinalDonationRoutes(finalDonationCtrl)
+	router.RegisterPaymentRoutes(paymentControl)
 
 	address := os.Getenv("PORT")
 	if err := e.Start(":" + address); err != nil {
