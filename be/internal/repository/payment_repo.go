@@ -28,6 +28,22 @@ func (pr *PaymentRepo) Create(payment *entity.Payment) (error) {
 	return nil
 }
 
+func (pr *PaymentRepo) GetById(id int) (payment entity.Payment, err error) {
+	if err := pr.db.WithContext(pr.ctx).Preload("User").Preload("User.Role").Preload("PaymentStatus").First(&payment, id).Error; err != nil {
+		return entity.Payment{}, err
+	}
+
+	return payment, nil
+}
+
+func (pr *PaymentRepo) GetAll() (payment []entity.Payment, err error) {
+	if err := pr.db.WithContext(pr.ctx).Preload("User").Preload("User.Role").Preload("PaymentStatus").Find(&payment).Error; err != nil {
+		return []entity.Payment{}, err
+	}
+
+	return payment, err
+}
+
 func (pr *PaymentRepo) CreateMidtrans(payment entity.Payment, orderId string) (res dto.PaymentResponse, err error) {
 	serverKey := os.Getenv("MIDTRANS_SERVER_KEY")
 	c := coreapi.Client{}

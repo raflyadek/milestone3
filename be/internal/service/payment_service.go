@@ -13,6 +13,8 @@ type PaymentRepository interface {
 	Create(payment *entity.Payment) (error)
 	CreateMidtrans(payment entity.Payment, orderId string) (res dto.PaymentResponse, err error)
 	CheckPaymentStatusMidtrans(transactionId string) (res dto.CheckPaymentStatusResponse, err error)
+	GetById(id int) (payment entity.Payment, err error)
+	GetAll() (payment []entity.Payment, err error)
 }
 
 type PaymentServ struct {
@@ -50,4 +52,46 @@ func (ps *PaymentServ) CheckPaymentStatusMidtrans(transactionId string) (res dto
 	resp, _:= ps.paymentRepo.CheckPaymentStatusMidtrans(transactionId)
 
 	return resp, nil
+}
+
+func (ps *PaymentServ) GetPaymentById(id int) (res dto.PaymentInfoResponse, err error) {
+	resp, err := ps.paymentRepo.GetById(id)
+	if err != nil {
+		log.Printf("failed get payment by id %s", err)
+		return dto.PaymentInfoResponse{}, err
+	}
+
+	res = dto.PaymentInfoResponse{
+		Id: resp.Id,
+		UserId: resp.UserId,
+		User: resp.User,
+		AuctionItemId: resp.AuctionItemId,
+		StatusId: resp.StatusId,
+		PaymentStatus: resp.PaymentStatus,
+		Amount: resp.Amount,
+	}
+
+	return res, nil
+}
+
+func (ps *PaymentServ) GetAllPayment() (res []dto.PaymentInfoResponse, err error) {
+	resp, err := ps.paymentRepo.GetAll()
+	if err != nil {
+		log.Println("failed get all payment info %s", err)
+		return []dto.PaymentInfoResponse{}, err
+	}
+
+	for _, payment := range resp {
+		res = append(res, dto.PaymentInfoResponse{
+		Id: payment.Id,
+		UserId: payment.UserId,
+		User: payment.User,
+		AuctionItemId: payment.AuctionItemId,
+		StatusId: payment.StatusId,
+		PaymentStatus: payment.PaymentStatus,
+		Amount: payment.Amount,
+		})
+	}
+
+	return res, nil
 }

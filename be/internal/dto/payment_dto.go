@@ -1,9 +1,11 @@
 package dto
 
+import "milestone3/be/internal/entity"
+
 type PaymentRequest struct {
 	UserId int `json:"user_id"`
 	AuctionItemId float64 `json:"auction_item_id"`
-	Amount int `json:"amount" validate:"required"`
+	Amount float64 `json:"amount" validate:"required"`
 }
 
 type PaymentResponse struct {
@@ -16,4 +18,14 @@ type CheckPaymentStatusResponse struct {
 	OrderId string `json:"order_id"`
 	TransactionId string `json:"transaction_id"`
 	PaymentStatus string `json:"payment_status"`
+}
+
+type PaymentInfoResponse struct {
+	Id int `json:"id"`
+	UserId int `json:"user_id"`
+	User entity.Users `json:"user"`
+	AuctionItemId float64 `json:"auction_item_id"`
+	StatusId int `json:"status_ud"`
+	PaymentStatus entity.PaymentStatus `json:"payment_status"`
+	Amount float64 `json:"amount"`
 }
