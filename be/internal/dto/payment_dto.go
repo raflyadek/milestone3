@@ -1,11 +1,9 @@
 package dto
 
 type PaymentRequest struct {
-	OrderId int `json:"order_id"`
-	GrossAmount float64 `json:"gross_amount" validate:"required,gte=1"`
-	Name string `json:"name" validate:"required"`
-	NoHp string `json:"no_hp" validate:"required,gte=5"`
-	Email string `json:"email" validate:"required,email"`
+	UserId int `json:"user_id" validate:"required"`
+	AuctionItemId float64 `json:"auction_item_id" validate:"required"`
+	Amount string `json:"amount" validate:"required"`
 }
 
 type PaymentResponse struct {

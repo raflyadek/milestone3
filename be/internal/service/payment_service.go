@@ -34,6 +34,7 @@ func (ps *PaymentServ) CreatePayment(req dto.PaymentRequest) (res dto.PaymentRes
 		Email: req.Email,
 		NoHp: req.NoHp,
 	}
+
 	if err := ps.paymentRepo.Create(&payment); err != nil {
 		log.Printf("error create payment %s", err)
 		return dto.PaymentResponse{}, err
