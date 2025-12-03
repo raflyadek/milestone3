@@ -23,7 +23,7 @@ func main() {
 
 	// GCP PUBLIC BUCKET
 	var gcpPublicRepo repository.GCPStorageRepo
-	publicBucket := os.Getenv("GCS_PUBLIC_BUCKET")
+	publicBucket := os.Getenv("PUBLIC_BUCKET")
 
 	if publicBucket != "" {
 		client, err := storage.NewClient(ctx)
@@ -32,12 +32,12 @@ func main() {
 		}
 		gcpPublicRepo = repository.NewGCPStorageRepo(client, publicBucket, true)
 	} else {
-		log.Println("GCS_PUBLIC_BUCKET NOT SET")
+		log.Println("PUBLIC_BUCKET NOT SET")
 	}
 
 	// GCP PRIVATE BUCKET
 	var gcpPrivateRepo repository.GCPStorageRepo
-	privateBucket := os.Getenv("GCS_PRIVATE_BUCKET")
+	privateBucket := os.Getenv("PRIVATE_BUCKET")
 
 	if privateBucket != "" {
 		client, err := storage.NewClient(ctx)
@@ -46,7 +46,7 @@ func main() {
 		}
 		gcpPrivateRepo = repository.NewGCPStorageRepo(client, privateBucket, false)
 	} else {
-		log.Println("GCS_PRIVATE_BUCKET NOT SET")
+		log.Println("PRIVATE_BUCKET NOT SET")
 	}
 
 	// repositories
