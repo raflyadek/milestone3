@@ -1,5 +1,142 @@
 basePath: /
 definitions:
+  dto.ArticleDTO:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      title:
+        type: string
+      week:
+        type: integer
+    required:
+    - content
+    - title
+    - week
+    type: object
+  dto.AuctionItemDTO:
+    properties:
+      category:
+        type: string
+      created_at:
+        description: Photos        []string  `json:"photos,omitempty" validate:"dive,url"`
+        type: string
+      description:
+        type: string
+      donation_id:
+        type: integer
+      id:
+        type: integer
+      session_id:
+        type: integer
+      starting_price:
+        type: number
+      status:
+        type: string
+      title:
+        type: string
+      user_id:
+        type: integer
+    required:
+    - category
+    - description
+    - donation_id
+    - title
+    type: object
+  dto.AuctionSessionDTO:
+    properties:
+      end_time:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      start_time:
+        type: string
+    required:
+    - end_time
+    - name
+    - start_time
+    type: object
+  dto.BidDTO:
+    properties:
+      amount:
+        type: number
+    required:
+    - amount
+    type: object
+  dto.DonationDTO:
+    properties:
+      category:
+        type: string
+      condition:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      photos:
+        items:
+          type: string
+        type: array
+      status:
+        type: string
+      title:
+        type: string
+      user_id:
+        type: integer
+    required:
+    - category
+    - condition
+    - description
+    - status
+    - title
+    - user_id
+    type: object
+  dto.PaymentRequest:
+    properties:
+      amount:
+        type: number
+      auction_item_id:
+        type: number
+      user_id:
+        type: integer
+    required:
+    - amount
+    type: object
+  dto.UserLoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.UserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        minLength: 3
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
   utils.Response:
     properties:
       data: {}
@@ -216,7 +353,7 @@ paths:
         name: article
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/dto.ArticleDTO'
       produces:
       - application/json
       responses:
@@ -278,7 +415,7 @@ paths:
         name: auctionItem
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/dto.AuctionItemDTO'
       produces:
       - application/json
       responses:
@@ -397,7 +534,7 @@ paths:
         name: auctionItem
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/dto.AuctionItemDTO'
       produces:
       - application/json
       responses:
@@ -463,7 +600,7 @@ paths:
         name: auctionSession
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/dto.AuctionSessionDTO'
       produces:
       - application/json
       responses:
@@ -582,7 +719,7 @@ paths:
         name: auctionSession
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/dto.AuctionSessionDTO'
       produces:
       - application/json
       responses:
@@ -636,7 +773,7 @@ paths:
         name: bid
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/dto.BidDTO'
       produces:
       - application/json
       responses:
@@ -762,7 +899,7 @@ paths:
         name: credentials
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/dto.UserLoginRequest'
       produces:
       - application/json
       responses:
@@ -796,7 +933,7 @@ paths:
         name: user
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/dto.UserRequest'
       produces:
       - application/json
       responses:
@@ -992,7 +1129,7 @@ paths:
         name: donation
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/dto.DonationDTO'
       produces:
       - application/json
       responses:
@@ -1040,7 +1177,7 @@ paths:
         name: donation
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/dto.DonationDTO'
       produces:
       - application/json
       responses:
@@ -1181,7 +1318,7 @@ paths:
         name: payment
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/dto.PaymentRequest'
       produces:
       - application/json
       responses:

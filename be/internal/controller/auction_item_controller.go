@@ -62,7 +62,7 @@ func isAdminFromTokenItem(c echo.Context) bool {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param auctionItem body object true "Auction item data"
+// @Param auctionItem body dto.AuctionItemDTO true "Auction item data"
 // @Success 201 {object} utils.Response "Auction item created successfully"
 // @Failure 400 {object} utils.Response "Bad request - Invalid payload"
 // @Failure 401 {object} utils.Response "Unauthorized - Invalid or missing token"
@@ -157,7 +157,7 @@ func (h *AuctionController) GetAuctionItemByID(c echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Auction Item ID"
-// @Param auctionItem body object true "Updated auction item data"
+// @Param auctionItem body dto.AuctionItemDTO true "Updated auction item data"
 // @Success 200 {object} utils.Response "Auction item updated successfully"
 // @Failure 400 {object} utils.Response "Bad request - Invalid ID or payload"
 // @Failure 401 {object} utils.Response "Unauthorized - Invalid or missing token"

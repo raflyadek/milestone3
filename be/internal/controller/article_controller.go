@@ -151,7 +151,7 @@ func (h *ArticleController) CreateArticle(c echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Article ID"
-// @Param article body object true "Updated article data"
+// @Param article body dto.ArticleDTO true "Updated article data"
 // @Success 200 {object} utils.Response "Article updated successfully"
 // @Failure 400 {object} utils.Response "Bad request - Invalid ID or payload"
 // @Failure 401 {object} utils.Response "Unauthorized - Invalid or missing token"

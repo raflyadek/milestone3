@@ -34,7 +34,7 @@ func NewPaymentController(validate *validator.Validate, ps PaymentService) *Paym
 // @Produce json
 // @Security BearerAuth
 // @Param auctionId path int true "Auction Item ID"
-// @Param payment body object true "Payment details"
+// @Param payment body dto.PaymentRequest true "Payment details"
 // @Success 201 {object} utils.Response "Payment created successfully"
 // @Failure 400 {object} utils.Response "Bad request - Invalid payload or auction ID"
 // @Failure 401 {object} utils.Response "Unauthorized - Invalid or missing token"

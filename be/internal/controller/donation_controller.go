@@ -184,7 +184,7 @@ func (h *DonationController) GetDonationByID(c echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Donation ID"
-// @Param donation body object true "Updated donation data"
+// @Param donation body dto.DonationDTO true "Updated donation data"
 // @Success 200 {object} utils.Response "Donation updated successfully"
 // @Failure 400 {object} utils.Response "Bad request - Invalid ID or payload"
 // @Failure 401 {object} utils.Response "Unauthorized - Invalid or missing token"
@@ -271,7 +271,7 @@ func (h *DonationController) DeleteDonation(c echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Donation ID"
-// @Param donation body object true "Partial donation data"
+// @Param donation body dto.DonationDTO true "Partial donation data"
 // @Success 200 {object} utils.Response "Donation patched successfully"
 // @Failure 400 {object} utils.Response "Bad request - Invalid ID or payload"
 // @Failure 401 {object} utils.Response "Unauthorized - Invalid or missing token"

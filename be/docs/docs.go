@@ -259,7 +259,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/dto.ArticleDTO"
                         }
                     }
                 ],
@@ -417,7 +417,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/dto.AuctionItemDTO"
                         }
                     }
                 ],
@@ -535,7 +535,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/dto.AuctionItemDTO"
                         }
                     }
                 ],
@@ -702,7 +702,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/dto.AuctionSessionDTO"
                         }
                     }
                 ],
@@ -820,7 +820,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/dto.AuctionSessionDTO"
                         }
                     }
                 ],
@@ -968,7 +968,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/dto.BidDTO"
                         }
                     }
                 ],
@@ -1157,7 +1157,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/dto.UserLoginRequest"
                         }
                     }
                 ],
@@ -1209,7 +1209,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/dto.UserRequest"
                         }
                     }
                 ],
@@ -1520,7 +1520,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/dto.DonationDTO"
                         }
                     }
                 ],
@@ -1656,7 +1656,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/dto.DonationDTO"
                         }
                     }
                 ],
@@ -1761,7 +1761,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/dto.PaymentRequest"
                         }
                     }
                 ],
@@ -1877,6 +1877,206 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.ArticleDTO": {
+            "type": "object",
+            "required": [
+                "content",
+                "title",
+                "week"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "week": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.AuctionItemDTO": {
+            "type": "object",
+            "required": [
+                "category",
+                "description",
+                "donation_id",
+                "title"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "Photos        []string  ` + "`" + `json:\"photos,omitempty\" validate:\"dive,url\"` + "`" + `",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "donation_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "session_id": {
+                    "type": "integer"
+                },
+                "starting_price": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.AuctionSessionDTO": {
+            "type": "object",
+            "required": [
+                "end_time",
+                "name",
+                "start_time"
+            ],
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.BidDTO": {
+            "type": "object",
+            "required": [
+                "amount"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.DonationDTO": {
+            "type": "object",
+            "required": [
+                "category",
+                "condition",
+                "description",
+                "status",
+                "title",
+                "user_id"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "condition": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.PaymentRequest": {
+            "type": "object",
+            "required": [
+                "amount"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "auction_item_id": {
+                    "type": "number"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.UserLoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
+        "dto.UserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "minLength": 3
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
         "utils.Response": {
             "type": "object",
             "properties": {

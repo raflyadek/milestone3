@@ -64,7 +64,7 @@ func isAdminFromToken(c echo.Context) bool {
 // @Security BearerAuth
 // @Param sessionID path int true "Auction Session ID"
 // @Param itemID path int true "Auction Item ID"
-// @Param bid body object true "Bid amount"
+// @Param bid body dto.BidDTO true "Bid amount"
 // @Success 200 {object} utils.Response "Bid placed successfully"
 // @Failure 400 {object} utils.Response "Bad request - Invalid parameters or bid too low"
 // @Failure 401 {object} utils.Response "Unauthorized - Invalid or missing token"

@@ -28,7 +28,7 @@ func NewUserController(validate *validator.Validate, us UserService) *UserContro
 // @Tags Your Donate Rise API - Authentication
 // @Accept json
 // @Produce json
-// @Param user body object true "User registration data"
+// @Param user body dto.UserRequest true "User registration data"
 // @Success 201 {object} utils.Response "User created successfully"
 // @Failure 400 {object} utils.Response "Bad request - Invalid payload or validation error"
 // @Failure 500 {object} utils.Response "Internal server error"
@@ -58,7 +58,7 @@ func (uc *UserController) CreateUser(c echo.Context) error {
 // @Tags Your Donate Rise API - Authentication
 // @Accept json
 // @Produce json
-// @Param credentials body object true "User login credentials"
+// @Param credentials body dto.UserLoginRequest true "User login credentials"
 // @Success 200 {object} utils.Response "Login successful, returns access token"
 // @Failure 400 {object} utils.Response "Bad request - Invalid credentials format"
 // @Failure 401 {object} utils.Response "Unauthorized - Invalid email or password"

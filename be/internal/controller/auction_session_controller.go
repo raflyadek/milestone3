@@ -42,7 +42,7 @@ func isAdminFromTokenSession(c echo.Context) bool {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param auctionSession body object true "Auction session data"
+// @Param auctionSession body dto.AuctionSessionDTO true "Auction session data"
 // @Success 201 {object} utils.Response "Auction session created successfully"
 // @Failure 400 {object} utils.Response "Bad request - Invalid payload"
 // @Failure 401 {object} utils.Response "Unauthorized - Invalid or missing token"
@@ -135,7 +135,7 @@ func (h *AuctionSessionController) GetAllAuctionSessions(c echo.Context) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Auction Session ID"
-// @Param auctionSession body object true "Updated auction session data"
+// @Param auctionSession body dto.AuctionSessionDTO true "Updated auction session data"
 // @Success 200 {object} utils.Response "Auction session updated successfully"
 // @Failure 400 {object} utils.Response "Bad request - Invalid ID, payload, or session is active"
 // @Failure 401 {object} utils.Response "Unauthorized - Invalid or missing token"
