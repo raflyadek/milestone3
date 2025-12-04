@@ -51,7 +51,16 @@ func (h *AuctionSessionController) CreateAuctionSession(c echo.Context) error {
 
 	createdSession, err := h.svc.Create(&payload)
 	if err != nil {
-		return utils.InternalServerErrorResponse(c, "failed to create auction session")
+		switch err {
+		case service.ErrInvalidDate:
+			return utils.BadRequestResponse(c, err.Error())
+		case service.ErrInvalidTime:
+			return utils.BadRequestResponse(c, err.Error())
+		case service.ErrInvalidAuction:
+			return utils.BadRequestResponse(c, err.Error())
+		default:
+			return utils.InternalServerErrorResponse(c, "failed to create auction session")
+		}
 	}
 
 	return utils.CreatedResponse(c, "auction session created successfully", createdSession)
@@ -121,6 +130,8 @@ func (h *AuctionSessionController) UpdateAuctionSession(c echo.Context) error {
 		case service.ErrExpiredSession:
 			return utils.BadRequestResponse(c, err.Error())
 		case service.ErrInvalidDate:
+			return utils.BadRequestResponse(c, err.Error())
+		case service.ErrInvalidTime:
 			return utils.BadRequestResponse(c, err.Error())
 		default:
 			return utils.InternalServerErrorResponse(c, "failed to update auction session")

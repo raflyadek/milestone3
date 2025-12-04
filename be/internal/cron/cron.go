@@ -44,6 +44,10 @@ func (s *BidScheduler) Start() {
 		if syncErr := s.bidSvc.SaveKeyToDB(); syncErr != nil {
 			s.logger.Error("Failed to save expired sessions", "error", syncErr)
 		}
+		// Also close items without bids
+		if closeErr := s.bidSvc.CloseExpiredItemsWithoutBids(); closeErr != nil {
+			s.logger.Error("Failed to close items without bids", "error", closeErr)
+		}
 	})
 
 	if err != nil {

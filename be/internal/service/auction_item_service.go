@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"milestone3/be/internal/dto"
 	"milestone3/be/internal/repository"
+	"milestone3/be/internal/utils"
 	"time"
 )
 
@@ -100,7 +101,7 @@ func (s *itemsService) Update(id int64, updateDTO *dto.AuctionItemUpdateDTO) (dt
 		return dto.AuctionItemDTO{}, ErrAuctionFinished
 	}
 
-	// Merge update: only update fields that are provided (non-nil pointers)
+	// validate and apply updates
 	if updateDTO.Title != nil {
 		existingItem.Title = *updateDTO.Title
 	}
@@ -119,29 +120,29 @@ func (s *itemsService) Update(id int64, updateDTO *dto.AuctionItemUpdateDTO) (dt
 	}
 	if updateDTO.Status != nil {
 		newStatus := *updateDTO.Status
-		// Business rules for status transitions
+		// status transition rules
 		switch existingItem.Status {
 		case "scheduled":
-			// Can change to: ongoing
+			// to ongoing
 			if newStatus != "ongoing" && newStatus != "scheduled" {
 				s.logger.Warn("Invalid status transition", "from", existingItem.Status, "to", newStatus)
 				return dto.AuctionItemDTO{}, ErrInvalidAuction
 			}
 		case "ongoing":
-			// Can change to: finished (but usually done by system)
+			// to finished
 			if newStatus != "finished" && newStatus != "ongoing" {
 				s.logger.Warn("Invalid status transition", "from", existingItem.Status, "to", newStatus)
 				return dto.AuctionItemDTO{}, ErrInvalidAuction
 			}
 		case "finished":
-			// Cannot change from finished
+			// cannot change from finished
 			s.logger.Warn("Cannot change status from finished", "itemID", id)
 			return dto.AuctionItemDTO{}, ErrAuctionFinished
 		}
 		existingItem.Status = newStatus
 	}
 	if updateDTO.SessionID != nil {
-		// Business rule: cannot change session if auction is ongoing
+		// cannot change session if auction is ongoing
 		if existingItem.Status == "ongoing" {
 			s.logger.Warn("Cannot change session for ongoing auction", "itemID", id)
 			return dto.AuctionItemDTO{}, ErrActiveSession
@@ -175,14 +176,10 @@ func (s *itemsService) Delete(id int64) error {
 	return nil
 }
 
-// CheckAndStartScheduledItems checks for items that should start based on session start_time
+// CheckAndStartScheduledItems (for cron job) to start if start_time has passed
 func (s *itemsService) CheckAndStartScheduledItems() error {
-	s.logger.Info("Checking for scheduled items to start...")
-
-	// Get all scheduled items with their session info
 	items, err := s.repo.GetScheduledItems()
 	if err != nil {
-		s.logger.Error("Failed to get scheduled items", "error", err)
 		return err
 	}
 
@@ -190,43 +187,28 @@ func (s *itemsService) CheckAndStartScheduledItems() error {
 	updatedCount := 0
 
 	for _, item := range items {
-		// Check if item has a session
+		// check if item has a session
 		if item.Session == nil {
-			s.logger.Warn("Item has no session", "itemID", item.ID)
 			continue
 		}
 
-		// Parse DB time as if it's in local timezone (ignore UTC marker from DB)
-		sessionStart := time.Date(
-			item.Session.StartTime.Year(), item.Session.StartTime.Month(), item.Session.StartTime.Day(),
-			item.Session.StartTime.Hour(), item.Session.StartTime.Minute(), item.Session.StartTime.Second(),
-			item.Session.StartTime.Nanosecond(), now.Location(),
-		)
+		// use local time for comparison
+		sessionStart := utils.ToLocalTime(item.Session.StartTime)
 
-		s.logger.Info("Checking item for auto-start",
-			"itemID", item.ID,
-			"sessionID", item.Session.ID,
-			"now", now.Format("2006-01-02 15:04:05"),
-			"sessionStart", sessionStart.Format("2006-01-02 15:04:05"),
-		)
-
-		// Check if current time >= session start_time
+		// check if current time >= session start_time
 		if !now.Before(sessionStart) {
 			// Time to start this auction
 			item.Status = "ongoing"
 			if err := s.repo.Update(&item); err != nil {
-				s.logger.Error("Failed to update item status to ongoing", "itemID", item.ID, "error", err)
+				s.logger.Error("Failed to start auction item", "itemID", item.ID, "error", err)
 				continue
 			}
 			updatedCount++
-			s.logger.Info("Started auction item", "itemID", item.ID, "title", item.Title, "sessionStart", sessionStart)
 		}
 	}
 
 	if updatedCount > 0 {
 		s.logger.Info("Auto-started auction items", "count", updatedCount)
-	} else {
-		s.logger.Info("No items ready to start", "totalScheduledItems", len(items))
 	}
 
 	return nil

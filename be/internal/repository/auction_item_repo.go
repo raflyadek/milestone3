@@ -30,7 +30,7 @@ func (r *auctionItemRepository) Create(item *entity.AuctionItem) error {
 
 func (r *auctionItemRepository) GetAll() ([]entity.AuctionItem, error) {
 	var items []entity.AuctionItem
-	err := r.db.Preload("Session").Preload("Photos").Find(&items).Error
+	err := r.db.Preload("Session").Find(&items).Error
 	return items, err
 }
 
@@ -42,13 +42,12 @@ func (r *auctionItemRepository) GetByID(id int64) (*entity.AuctionItem, error) {
 
 func (r *auctionItemRepository) ReadBySession(sessionID int64) ([]entity.AuctionItem, error) {
 	var items []entity.AuctionItem
-	err := r.db.Preload("Session").Preload("Photos").Where("session_id = ?", sessionID).Find(&items).Error
+	err := r.db.Preload("Session").Where("session_id = ?", sessionID).Find(&items).Error
 	return items, err
 }
 
 func (r *auctionItemRepository) GetScheduledItems() ([]entity.AuctionItem, error) {
 	var items []entity.AuctionItem
-	// Get items with status='scheduled' and preload their session to check start_time
 	err := r.db.Preload("Session").Where("status = ?", "scheduled").Find(&items).Error
 	return items, err
 }

@@ -49,7 +49,8 @@ func (r *bidRedisRepository) SetHighestBid(sessionID, itemID int64, amount float
 		return err
 	}
 
-	ttl := time.Until(sessionEndTime)
+	// buffer with ttl to delete key after session end
+	ttl := time.Until(sessionEndTime) + (5 * time.Minute)
 	if ttl > 0 {
 		if err := r.client.Expire(r.ctx, key, ttl).Err(); err != nil {
 			return err

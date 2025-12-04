@@ -23,6 +23,7 @@ var (
 	ErrAuctionNotFoundID = errors.New("auction ID not found")
 	ErrSessionNotFoundID = errors.New("auction session ID not found")
 	ErrInvalidDate       = errors.New("end time should be after start time")
+	ErrInvalidTime       = errors.New("time must be in the future")
 	ErrActiveSession     = errors.New("cannot modify an active auction session")
 	ErrAuctionFinished   = errors.New("cannot update auction item with status 'finished'")
 	ErrExpiredSession    = errors.New("cannot modify expired auction session")

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"milestone3/be/internal/entity"
 	"milestone3/be/internal/repository"
+	"milestone3/be/internal/utils"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,14 +27,6 @@ func getMutex(itemID int64) *sync.Mutex {
 	return m.(*sync.Mutex)
 }
 
-func toLocalTime(t time.Time) time.Time {
-	return time.Date(
-		t.Year(), t.Month(), t.Day(),
-		t.Hour(), t.Minute(), t.Second(),
-		t.Nanosecond(), time.Now().Location(),
-	)
-}
-
 type bidService struct {
 	redisRepo          repository.BidRedisRepository
 	bidRepo            repository.BidRepository
@@ -48,6 +41,7 @@ type BidService interface {
 
 	SaveKeyToDB() error
 	DeleteKeyValue() error
+	CloseExpiredItemsWithoutBids() error
 }
 
 func NewBidService(r repository.BidRedisRepository, b repository.BidRepository, itemRepo repository.AuctionItemRepository, sessionRepo repository.AuctionSessionRepository, logger *slog.Logger) BidService {
@@ -67,7 +61,6 @@ func (s *bidService) PlaceBid(sessionID, itemID, userID int64, amount float64, s
 
 	item, err := s.itemRepo.GetByID(itemID)
 	if err != nil {
-		s.logger.Error("item not found", "itemID", itemID, "error", err)
 		return ErrAuctionNotFound
 	}
 
@@ -87,8 +80,8 @@ func (s *bidService) PlaceBid(sessionID, itemID, userID int64, amount float64, s
 
 	now := time.Now()
 
-	sessionStart := toLocalTime(session.StartTime)
-	sessionEnd := toLocalTime(session.EndTime)
+	sessionStart := utils.ToLocalTime(session.StartTime)
+	sessionEnd := utils.ToLocalTime(session.EndTime)
 
 	if now.Before(sessionStart) {
 		return ErrInvalidAuction
@@ -109,7 +102,6 @@ func (s *bidService) PlaceBid(sessionID, itemID, userID int64, amount float64, s
 
 	currentHighest, currentBid, err := s.redisRepo.GetHighestBid(sessionID, itemID)
 	if err != nil && !errors.Is(err, redis.Nil) {
-		s.logger.Error("failed to get highest bid", "error", err)
 		return err
 	}
 
@@ -137,13 +129,7 @@ func (s *bidService) PlaceBid(sessionID, itemID, userID int64, amount float64, s
 		return err
 	}
 
-	s.logger.Info("new highest bid",
-		"sessionID", sessionID,
-		"itemID", itemID,
-		"userID", userID,
-		"oldBid", currentHighest,
-		"newBid", amount,
-	)
+	s.logger.Info("bid placed", "sessionID", sessionID, "itemID", itemID, "userID", userID, "amount", amount)
 
 	return nil
 }
@@ -193,25 +179,21 @@ func (s *bidService) SaveKeyToDB() error {
 		return nil
 	}
 
-	s.logger.Info("processing expired bids", "totalKeys", len(keys))
-
 	totalSavedAuctionItemToDB := 0
 	for _, key := range keys {
 		parsedSessionID, itemID, err := parseKey(key)
 		if err != nil {
-			s.logger.Warn("invalid key format", "key", key, "error", err)
 			continue
 		}
 
 		// fetch end_time from database for accuracy
 		session, err := s.auctionSessionRepo.GetByID(parsedSessionID)
 		if err != nil {
-			s.logger.Warn("failed to get session from DB", "key", key, "sessionID", parsedSessionID, "error", err)
 			continue
 		}
 
 		now := time.Now()
-		endTimeLocal := toLocalTime(session.EndTime)
+		endTimeLocal := utils.ToLocalTime(session.EndTime)
 
 		if now.Before(endTimeLocal) {
 			continue
@@ -220,7 +202,6 @@ func (s *bidService) SaveKeyToDB() error {
 		// get bid data from redis
 		bid, err := s.redisRepo.GetBidByKey(key)
 		if err != nil {
-			s.logger.Warn("failed to get bid", "key", key, "error", err)
 			continue
 		}
 
@@ -231,11 +212,7 @@ func (s *bidService) SaveKeyToDB() error {
 			Amount: bid.Amount,
 		})
 		if err != nil {
-			s.logger.Error("failed to save final bid",
-				"sessionID", parsedSessionID,
-				"itemID", itemID,
-				"error", err,
-			)
+			s.logger.Error("failed to save final bid", "sessionID", parsedSessionID, "itemID", itemID, "error", err)
 			continue
 		}
 
@@ -246,15 +223,13 @@ func (s *bidService) SaveKeyToDB() error {
 		} else {
 			item.Status = "finished"
 			if err := s.itemRepo.Update(item); err != nil {
-				s.logger.Error("failed to update item status to finished", "itemID", itemID, "error", err)
-			} else {
-				s.logger.Info("item status updated to finished", "itemID", itemID)
+				s.logger.Error("failed to update item status", "itemID", itemID, "error", err)
 			}
 		}
 
 		// delete redis key after saved to table Bid
 		if err := s.redisRepo.DeleteKey(key); err != nil {
-			s.logger.Warn("failed to delete Redis key after save", "key", key, "error", err)
+			s.logger.Warn("failed to delete Redis key", "key", key, "error", err)
 		}
 
 		s.logger.Info("final bid saved",
@@ -269,6 +244,63 @@ func (s *bidService) SaveKeyToDB() error {
 	if totalSavedAuctionItemToDB > 0 {
 		s.logger.Info("expired sessions processed", "totalSaved", totalSavedAuctionItemToDB)
 	}
+
+	// also check for ongoing items with expired sessions with no bids
+	if err := s.CloseExpiredItemsWithoutBids(); err != nil {
+		s.logger.Error("failed to close expired items without bids", "error", err)
+	}
+
+	return nil
+}
+
+// CloseExpiredItemsWithoutBids to get the redis key with no bids
+func (s *bidService) CloseExpiredItemsWithoutBids() error {
+	items, err := s.itemRepo.GetAll()
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+	closedCount := 0
+
+	for _, item := range items {
+		// validate item is not ongoing
+		if item.Status != "ongoing" {
+			continue
+		}
+
+		// skip if no session
+		if item.SessionID == nil {
+			continue
+		}
+
+		// get session to check end time
+		session, err := s.auctionSessionRepo.GetByID(*item.SessionID)
+		if err != nil {
+			continue
+		}
+
+		endTimeLocal := utils.ToLocalTime(session.EndTime)
+
+		if now.After(endTimeLocal) {
+			amount, _, err := s.redisRepo.GetHighestBid(*item.SessionID, item.ID)
+
+			// if no bid get status back to 'scheduled'
+			if err != nil || amount == 0 {
+				item.Status = "scheduled"
+				if err := s.itemRepo.Update(&item); err != nil {
+					s.logger.Error("failed to revert item to scheduled", "itemID", item.ID, "error", err)
+				} else {
+					closedCount++
+				}
+			}
+		}
+	}
+
+	if closedCount > 0 {
+		s.logger.Info("reverted items to scheduled", "count", closedCount)
+	}
+
 	return nil
 }
 
