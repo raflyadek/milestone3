@@ -10,7 +10,6 @@ import (
 	"milestone3/be/internal/entity"
 	"milestone3/be/internal/utils"
 
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
