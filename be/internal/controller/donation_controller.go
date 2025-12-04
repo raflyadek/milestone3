@@ -13,16 +13,22 @@ import (
 	"milestone3/be/internal/service"
 	"milestone3/be/internal/utils"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
 type DonationController struct {
 	svc          service.DonationService
 	privateStore repository.GCPStorageRepo
+	validator    *validator.Validate
 }
 
 func NewDonationController(s service.DonationService, privateStore repository.GCPStorageRepo) *DonationController {
-	return &DonationController{svc: s, privateStore: privateStore}
+	return &DonationController{
+		svc:          s,
+		privateStore: privateStore,
+		validator:    validator.New(),
+	}
 }
 
 // CreateDonation godoc
@@ -125,6 +131,10 @@ func (h *DonationController) CreateDonation(c echo.Context) error {
 		return utils.UnauthorizedResponse(c, "unauthenticated")
 	}
 	payload.UserID = userID
+
+	if err := h.validator.Struct(payload); err != nil {
+		return utils.BadRequestResponse(c, err.Error())
+	}
 
 	if err := h.svc.CreateDonation(payload); err != nil {
 		return utils.InternalServerErrorResponse(c, "failed creating donation")
