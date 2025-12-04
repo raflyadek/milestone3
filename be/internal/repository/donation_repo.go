@@ -17,6 +17,7 @@ type DonationRepo interface {
 	GetDonationsByUserID(userID uint, page, limit int) ([]entity.Donation, int64, error)
 
 	PatchDonation(donation entity.Donation) error
+	CreateFinalDonation(donationID uint) error
 }
 
 type donationRepo struct {
@@ -94,5 +95,31 @@ func (r *donationRepo) DeleteDonation(id uint) error {
 }
 
 func (r *donationRepo) PatchDonation(donation entity.Donation) error {
-	return r.db.Model(&entity.Donation{}).Where("id = ?", donation.ID).Updates(donation).Error
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Update donation status
+		if err := tx.Model(&entity.Donation{}).Where("id = ?", donation.ID).Updates(donation).Error; err != nil {
+			return err
+		}
+
+		// If status is verified_for_donation, create final_donation entry
+		if donation.Status == entity.StatusVerifiedForDonation {
+			// Check if already exists
+			var count int64
+			tx.Model(&entity.FinalDonation{}).Where("donation_id = ?", donation.ID).Count(&count)
+			if count == 0 {
+				finalDonation := entity.FinalDonation{
+					DonationID: donation.ID,
+				}
+				if err := tx.Create(&finalDonation).Error; err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	})
+}
+
+func (r *donationRepo) CreateFinalDonation(donationID uint) error {
+	return r.db.Create(&entity.FinalDonation{DonationID: donationID}).Error
 }

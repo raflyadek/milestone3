@@ -9,6 +9,8 @@ import (
 type FinalDonationRepository interface {
 	GetAllFinalDonations(page, limit int) ([]entity.FinalDonation, int64, error)
 	GetAllFinalDonationsByUserID(userID int) ([]entity.FinalDonation, error)
+	UpdateNotes(donationID uint, notes string) error
+	GetByDonationID(donationID uint) (entity.FinalDonation, error)
 }
 
 type finalDonationRepository struct {
@@ -53,4 +55,14 @@ func (r *finalDonationRepository) GetAllFinalDonationsByUserID(userID int) ([]en
 		Preload("Donation").
 		Find(&finalDonations).Error
 	return finalDonations, err
+}
+
+func (r *finalDonationRepository) UpdateNotes(donationID uint, notes string) error {
+	return r.db.Model(&entity.FinalDonation{}).Where("donation_id = ?", donationID).Update("notes", notes).Error
+}
+
+func (r *finalDonationRepository) GetByDonationID(donationID uint) (entity.FinalDonation, error) {
+	var finalDonation entity.FinalDonation
+	err := r.db.Where("donation_id = ?", donationID).Preload("Donation").First(&finalDonation).Error
+	return finalDonation, err
 }

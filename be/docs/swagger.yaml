@@ -121,6 +121,16 @@ definitions:
     required:
     - amount
     type: object
+  dto.UpdateNotesDTO:
+    properties:
+      donation_id:
+        type: integer
+      notes:
+        type: string
+    required:
+    - donation_id
+    - notes
+    type: object
   dto.UserLoginRequest:
     properties:
       email:
@@ -1272,7 +1282,7 @@ paths:
       consumes:
       - application/json
       description: Retrieve all items that were directly donated to institutions with
-        pagination (admin only)
+        pagination (admin sees all, user sees own)
       parameters:
       - description: 'Page number (default: 1)'
         in: query
@@ -1291,10 +1301,6 @@ paths:
             $ref: '#/definitions/utils.SuccessResponseData'
         "401":
           description: Unauthorized - Invalid or missing token
-          schema:
-            $ref: '#/definitions/utils.ErrorResponse'
-        "403":
-          description: Forbidden - Admin access required
           schema:
             $ref: '#/definitions/utils.ErrorResponse'
         "500":
@@ -1329,6 +1335,46 @@ paths:
       security:
       - BearerAuth: []
       summary: Get my final donations
+      tags:
+      - Your Donate Rise API - Final Donations
+  /donations/final/notes:
+    post:
+      consumes:
+      - application/json
+      description: User can add notes to their approved donation
+      parameters:
+      - description: Donation ID and notes
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateNotesDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Notes updated successfully
+          schema:
+            $ref: '#/definitions/utils.SuccessResponseData'
+        "400":
+          description: Bad request - Invalid input
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "403":
+          description: Forbidden - Not your donation
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update notes for final donation
       tags:
       - Your Donate Rise API - Final Donations
   /donations/final/user/{user_id}:

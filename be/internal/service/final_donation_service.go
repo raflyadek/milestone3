@@ -8,6 +8,7 @@ import (
 type FinalDonationService interface {
 	GetAllFinalDonations(page, limit int) ([]entity.FinalDonation, int64, error)
 	GetAllFinalDonationsByUserID(userID int) ([]entity.FinalDonation, error)
+	UpdateNotes(donationID uint, userID uint, notes string) error
 }
 
 type finalDonationService struct {
@@ -24,4 +25,19 @@ func (s *finalDonationService) GetAllFinalDonations(page, limit int) ([]entity.F
 
 func (s *finalDonationService) GetAllFinalDonationsByUserID(userID int) ([]entity.FinalDonation, error) {
 	return s.finalDonationRepo.GetAllFinalDonationsByUserID(userID)
+}
+
+func (s *finalDonationService) UpdateNotes(donationID uint, userID uint, notes string) error {
+	// Get final donation to check ownership via donation
+	finalDonation, err := s.finalDonationRepo.GetByDonationID(donationID)
+	if err != nil {
+		return err
+	}
+
+	// Check if user owns the donation
+	if finalDonation.Donation.UserID != userID {
+		return ErrForbidden
+	}
+
+	return s.finalDonationRepo.UpdateNotes(donationID, notes)
 }

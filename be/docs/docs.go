@@ -1415,7 +1415,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve all items that were directly donated to institutions with pagination (admin only)",
+                "description": "Retrieve all items that were directly donated to institutions with pagination (admin sees all, user sees own)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1449,12 +1449,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized - Invalid or missing token",
-                        "schema": {
-                            "$ref": "#/definitions/utils.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden - Admin access required",
                         "schema": {
                             "$ref": "#/definitions/utils.ErrorResponse"
                         }
@@ -1495,6 +1489,69 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized - Invalid or missing token",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/donations/final/notes": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "User can add notes to their approved donation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Your Donate Rise API - Final Donations"
+                ],
+                "summary": "Update notes for final donation",
+                "parameters": [
+                    {
+                        "description": "Donation ID and notes",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateNotesDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Notes updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/utils.SuccessResponseData"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing token",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Not your donation",
                         "schema": {
                             "$ref": "#/definitions/utils.ErrorResponse"
                         }
@@ -2198,6 +2255,21 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.UpdateNotesDTO": {
+            "type": "object",
+            "required": [
+                "donation_id",
+                "notes"
+            ],
+            "properties": {
+                "donation_id": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
                 }
             }
         },
