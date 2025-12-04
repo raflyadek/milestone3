@@ -19,15 +19,19 @@ const (
 	MaxRetries      = 3
 )
 
-var (
-	ErrDuplicateBid = errors.New("duplicate bid detected")
-)
-
 var mutex sync.Map
 
 func getMutex(itemID int64) *sync.Mutex {
 	m, _ := mutex.LoadOrStore(itemID, &sync.Mutex{})
 	return m.(*sync.Mutex)
+}
+
+func toLocalTime(t time.Time) time.Time {
+	return time.Date(
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second(),
+		t.Nanosecond(), time.Now().Location(),
+	)
 }
 
 type bidService struct {
@@ -63,7 +67,7 @@ func (s *bidService) PlaceBid(sessionID, itemID, userID int64, amount float64, s
 
 	item, err := s.itemRepo.GetByID(itemID)
 	if err != nil {
-		s.logger.Error("item not found", "itemID", itemID)
+		s.logger.Error("item not found", "itemID", itemID, "error", err)
 		return ErrAuctionNotFound
 	}
 
@@ -75,13 +79,26 @@ func (s *bidService) PlaceBid(sessionID, itemID, userID int64, amount float64, s
 		return ErrInvalidAuction
 	}
 
+	// validate session has started
+	session, err := s.auctionSessionRepo.GetByID(sessionID)
+	if err != nil {
+		return ErrSessionNotFoundID
+	}
+
+	now := time.Now()
+
+	sessionStart := toLocalTime(session.StartTime)
+	sessionEnd := toLocalTime(session.EndTime)
+
+	if now.Before(sessionStart) {
+		return ErrInvalidAuction
+	}
+
+	if now.After(sessionEnd) {
+		return ErrInvalidAuction
+	}
+
 	if err = s.redisRepo.CheckDuplicateBid(userID, itemID, amount, 10*time.Second); err != nil {
-		s.logger.Warn("duplicate bid detected",
-			"sessionID", sessionID,
-			"itemID", itemID,
-			"userID", userID,
-			"amount", amount,
-		)
 		return ErrDuplicateBid
 	}
 
@@ -99,11 +116,6 @@ func (s *bidService) PlaceBid(sessionID, itemID, userID int64, amount float64, s
 	// validate amount > starting price
 	if currentHighest == 0 {
 		if amount < item.StartingPrice {
-			s.logger.Warn("bid below starting price",
-				"itemID", itemID,
-				"startingPrice", item.StartingPrice,
-				"bidAmount", amount,
-			)
 			return ErrBidTooLow
 		}
 	}
@@ -113,7 +125,7 @@ func (s *bidService) PlaceBid(sessionID, itemID, userID int64, amount float64, s
 	}
 
 	if currentBid == userID {
-		return errors.New("you are already the highest bidder")
+		return ErrAlreadyHighestBidder
 	}
 
 	if currentHighest > 0 && amount < currentHighest+MinBidIncrement {
@@ -169,8 +181,6 @@ func parseKey(key string) (sessionID, itemID int64, err error) {
 }
 
 func (s *bidService) SaveKeyToDB() error {
-	s.logger.Info("scanning for expired sessions")
-
 	pattern := "active:auction:*:item:*"
 
 	keys, err := s.redisRepo.ScanKeys(pattern)
@@ -179,9 +189,13 @@ func (s *bidService) SaveKeyToDB() error {
 		return err
 	}
 
-	s.logger.Info("found bid keys", "count", len(keys), "keys", keys)
+	if len(keys) == 0 {
+		return nil
+	}
 
-	totalSynced := 0
+	s.logger.Info("processing expired bids", "totalKeys", len(keys))
+
+	totalSavedAuctionItemToDB := 0
 	for _, key := range keys {
 		parsedSessionID, itemID, err := parseKey(key)
 		if err != nil {
@@ -189,37 +203,19 @@ func (s *bidService) SaveKeyToDB() error {
 			continue
 		}
 
-		// Always fetch end_time from database for accuracy
+		// fetch end_time from database for accuracy
 		session, err := s.auctionSessionRepo.GetByID(parsedSessionID)
 		if err != nil {
 			s.logger.Warn("failed to get session from DB", "key", key, "sessionID", parsedSessionID, "error", err)
 			continue
 		}
 
-		endTime := session.EndTime
-		s.logger.Info("checking session expiry", "key", key, "sessionID", parsedSessionID, "endTime", endTime)
-
-		// Compare wall clock time, ignoring timezone since DB stores local time
 		now := time.Now()
-
-		// Parse endTime as if it's in local timezone (ignore the Z suffix from DB)
-		endTimeLocal := time.Date(
-			endTime.Year(), endTime.Month(), endTime.Day(),
-			endTime.Hour(), endTime.Minute(), endTime.Second(),
-			endTime.Nanosecond(), now.Location(),
-		)
+		endTimeLocal := toLocalTime(session.EndTime)
 
 		if now.Before(endTimeLocal) {
-			s.logger.Info("session not expired yet, skipping",
-				"key", key,
-				"now", now,
-				"endTime", endTimeLocal,
-				"secondsRemaining", endTimeLocal.Sub(now).Seconds(),
-			)
 			continue
 		}
-
-		s.logger.Info("processing expired session", "key", key, "now", now, "endTime", endTimeLocal)
 
 		// get bid data from redis
 		bid, err := s.redisRepo.GetBidByKey(key)
@@ -243,30 +239,40 @@ func (s *bidService) SaveKeyToDB() error {
 			continue
 		}
 
-		// Don't delete key here - will be cleaned up at midnight
-		s.logger.Info("successfully synced bid to DB",
-			"key", key,
-			"sessionID", parsedSessionID,
-			"itemID", itemID,
-			"userID", bid.UserID,
-			"amount", bid.Amount,
-		)
-		totalSynced++
+		// set status to finished
+		item, err := s.itemRepo.GetByID(itemID)
+		if err != nil {
+			s.logger.Warn("failed to get item for status update", "itemID", itemID, "error", err)
+		} else {
+			item.Status = "finished"
+			if err := s.itemRepo.Update(item); err != nil {
+				s.logger.Error("failed to update item status to finished", "itemID", itemID, "error", err)
+			} else {
+				s.logger.Info("item status updated to finished", "itemID", itemID)
+			}
+		}
+
+		// delete redis key after saved to table Bid
+		if err := s.redisRepo.DeleteKey(key); err != nil {
+			s.logger.Warn("failed to delete Redis key after save", "key", key, "error", err)
+		}
+
 		s.logger.Info("final bid saved",
 			"sessionID", parsedSessionID,
 			"itemID", itemID,
 			"amount", bid.Amount,
 			"winner", bid.UserID,
 		)
+		totalSavedAuctionItemToDB++
 	}
 
-	s.logger.Info("expired sessions processed", "totalSynced", totalSynced)
+	if totalSavedAuctionItemToDB > 0 {
+		s.logger.Info("expired sessions processed", "totalSaved", totalSavedAuctionItemToDB)
+	}
 	return nil
 }
 
 func (s *bidService) DeleteKeyValue() error {
-	s.logger.Info("Starting midnight cleanup of all bid keys...")
-
 	pattern := "active:auction:*:item:*"
 	keys, err := s.redisRepo.ScanKeys(pattern)
 	if err != nil {
@@ -274,7 +280,9 @@ func (s *bidService) DeleteKeyValue() error {
 		return err
 	}
 
-	s.logger.Info("found bid keys to cleanup", "count", len(keys))
+	if len(keys) == 0 {
+		return nil
+	}
 
 	deletedCount := 0
 	for _, key := range keys {
@@ -285,6 +293,6 @@ func (s *bidService) DeleteKeyValue() error {
 		}
 	}
 
-	s.logger.Info("midnight cleanup completed", "deletedCount", deletedCount, "totalKeys", len(keys))
+	s.logger.Info("midnight cleanup completed", "deleted", deletedCount)
 	return nil
 }

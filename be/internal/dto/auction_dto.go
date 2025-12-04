@@ -20,6 +20,17 @@ type AuctionItemDTO struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 }
 
+// AuctionItemUpdateDTO for partial updates (all fields optional)
+type AuctionItemUpdateDTO struct {
+	Title         *string  `json:"title,omitempty"`
+	Description   *string  `json:"description,omitempty"`
+	Category      *string  `json:"category,omitempty"`
+	Status        *string  `json:"status,omitempty" validate:"omitempty,oneof=scheduled ongoing finished"`
+	StartingPrice *float64 `json:"starting_price,omitempty" validate:"omitempty,min=0"`
+	SessionID     *int64   `json:"session_id,omitempty"`
+	DonationID    *int64   `json:"donation_id,omitempty"`
+}
+
 func AuctionItemRequest(d AuctionItemDTO) (entity.AuctionItem, error) {
 	status := d.Status
 	if status == "" {
@@ -49,7 +60,7 @@ func AuctionItemResponse(m entity.AuctionItem) AuctionItemDTO {
 		Category:      m.Category,
 		Status:        m.Status,
 		StartingPrice: m.StartingPrice,
-		CreatedAt: m.CreatedAt,
+		CreatedAt:     m.CreatedAt,
 	}
 }
 

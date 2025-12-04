@@ -118,6 +118,8 @@ func (h *AuctionSessionController) UpdateAuctionSession(c echo.Context) error {
 			return utils.NotFoundResponse(c, err.Error())
 		case service.ErrActiveSession:
 			return utils.BadRequestResponse(c, err.Error())
+		case service.ErrExpiredSession:
+			return utils.BadRequestResponse(c, err.Error())
 		case service.ErrInvalidDate:
 			return utils.BadRequestResponse(c, err.Error())
 		default:
@@ -144,7 +146,7 @@ func (h *AuctionSessionController) DeleteAuctionSession(c echo.Context) error {
 		switch err {
 		case service.ErrAuctionNotFoundID:
 			return utils.NotFoundResponse(c, err.Error())
-		case service.ErrActiveSession, service.ErrInvalidDate:
+		case service.ErrActiveSession, service.ErrExpiredSession, service.ErrInvalidDate:
 			return utils.BadRequestResponse(c, err.Error())
 		default:
 			return utils.InternalServerErrorResponse(c, "failed to delete auction session")

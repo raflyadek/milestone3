@@ -79,8 +79,8 @@ func main() {
 	auctionSessionSvc := service.NewAuctionSessionService(auctionSessionRepo, logger)
 	bidSvc := service.NewBidService(redisRepo, bidRepo, auctionItemRepo, auctionSessionRepo, logger)
 
-	// bid scheduler
-	bidScheduler := scheduler.NewBidScheduler(bidSvc, logger)
+	// bid scheduler (now also handles auction auto-start)
+	bidScheduler := scheduler.NewBidScheduler(bidSvc, auctionSvc, logger)
 	bidScheduler.Start()
 
 	// controllers

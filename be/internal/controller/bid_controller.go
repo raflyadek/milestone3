@@ -83,10 +83,19 @@ func (h *BidController) PlaceBid(c echo.Context) error {
 		return utils.UnauthorizedResponse(c, "unauthenticated")
 	}
 
+	// Log request details
+	c.Logger().Infof("PlaceBid request: sessionID=%d, itemID=%d, userID=%d, amount=%.2f",
+		sessionID, itemID, userID, payload.Amount)
+
 	session, err := h.sessionSvc.GetByID(sessionID)
 	if err != nil {
+		c.Logger().Errorf("Failed to get session: %v", err)
 		return utils.NotFoundResponse(c, "auction session not found")
 	}
+
+	c.Logger().Infof("Session found: ID=%d, StartTime=%s, EndTime=%s",
+		session.ID, session.StartTime, session.EndTime)
+
 	err = h.svc.PlaceBid(
 		sessionID,
 		itemID,
@@ -96,6 +105,7 @@ func (h *BidController) PlaceBid(c echo.Context) error {
 	)
 
 	if err != nil {
+		c.Logger().Errorf("PlaceBid error: %v", err)
 		switch err {
 		case service.ErrBidTooLow, service.ErrInvalidBidding:
 			return utils.BadRequestResponse(c, err.Error())
@@ -103,11 +113,17 @@ func (h *BidController) PlaceBid(c echo.Context) error {
 			return utils.NotFoundResponse(c, err.Error())
 		case service.ErrInvalidAuction:
 			return utils.ConflictResponse(c, err.Error())
+		case service.ErrDuplicateBid:
+			return utils.ConflictResponse(c, err.Error())
+		case service.ErrAlreadyHighestBidder:
+			return utils.ConflictResponse(c, "you are already the highest bidder")
 		default:
 			return utils.InternalServerErrorResponse(c, "failed placing bid")
 		}
 	}
 
+	c.Logger().Infof("Bid placed successfully: sessionID=%d, itemID=%d, amount=%.2f",
+		sessionID, itemID, payload.Amount)
 	return utils.SuccessResponse(c, "bid placed successfully", nil)
 }
 

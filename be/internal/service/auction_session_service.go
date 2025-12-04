@@ -1,17 +1,11 @@
 package service
 
 import (
-	"errors"
 	"log/slog"
 	"milestone3/be/internal/dto"
 	"milestone3/be/internal/entity"
 	"milestone3/be/internal/repository"
 	"time"
-)
-
-var (
-	ErrSessionNotFound   = errors.New("auction session not found")
-	ErrExpiredSession    = errors.New("cannot modify expired auction session")
 )
 
 type sessionService struct {
@@ -75,7 +69,7 @@ func (s *sessionService) GetAll() ([]dto.AuctionSessionDTO, error) {
 	sessions, err := s.repo.GetAll()
 	if err != nil {
 		s.logger.Error("Failed to get all auction sessions", "error", err)
-		return nil, ErrSessionNotFound
+		return nil, ErrSessionNotFoundID
 	}
 
 	var sessionDTOs []dto.AuctionSessionDTO

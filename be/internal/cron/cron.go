@@ -9,14 +9,16 @@ import (
 )
 
 type BidScheduler struct {
-	svc    service.BidService
-	logger *slog.Logger
+	bidSvc     service.BidService
+	auctionSvc service.AuctionItemService
+	logger     *slog.Logger
 }
 
-func NewBidScheduler(bidService service.BidService, logger *slog.Logger) *BidScheduler {
+func NewBidScheduler(bidService service.BidService, auctionService service.AuctionItemService, logger *slog.Logger) *BidScheduler {
 	return &BidScheduler{
-		svc:    bidService,
-		logger: logger,
+		bidSvc:     bidService,
+		auctionSvc: auctionService,
+		logger:     logger,
 	}
 }
 
@@ -24,11 +26,23 @@ func (s *BidScheduler) Start() {
 	// set as local time
 	scheduler := gocron.NewScheduler(time.Local)
 
-	// save expired sessions to DB every 1 minute
+	// Check and start scheduled auctions every 1 minute
 	_, err := scheduler.Every(1).Minute().Do(func() {
+		s.logger.Info("Checking for scheduled auctions to start...")
+		if err := s.auctionSvc.CheckAndStartScheduledItems(); err != nil {
+			s.logger.Error("Failed to check/start scheduled items", "error", err)
+		}
+	})
+
+	if err != nil {
+		s.logger.Error("Failed to schedule auction auto-start", "error", err)
+	}
+
+	// save expired sessions to DB every 1 minute
+	_, err = scheduler.Every(1).Minute().Do(func() {
 		s.logger.Info("Running expired sessions cleanup...")
-		if err := s.svc.SaveKeyToDB(); err != nil {
-			s.logger.Error("Failed to save expired sessions", "error", err)
+		if syncErr := s.bidSvc.SaveKeyToDB(); syncErr != nil {
+			s.logger.Error("Failed to save expired sessions", "error", syncErr)
 		}
 	})
 
@@ -40,8 +54,8 @@ func (s *BidScheduler) Start() {
 	// delete key value at 12 AM daily
 	_, err = scheduler.Every(1).Day().At("00:00").Do(func() {
 		s.logger.Info("Running midnight Redis cleanup...")
-		if err = s.svc.DeleteKeyValue(); err != nil {
-			s.logger.Error("Failed to cleanup Redis at midnight", "error", err)
+		if cleanupErr := s.bidSvc.DeleteKeyValue(); cleanupErr != nil {
+			s.logger.Error("Failed to cleanup Redis at midnight", "error", cleanupErr)
 		}
 	})
 
@@ -52,6 +66,7 @@ func (s *BidScheduler) Start() {
 
 	scheduler.StartAsync()
 	s.logger.Info("Bid scheduler started")
+	s.logger.Info("- Auto-start auctions: every 1 minute")
 	s.logger.Info("- Sync to DB: every 1 minute")
 	s.logger.Info("- Redis cleanup: daily at 00:00")
 }
