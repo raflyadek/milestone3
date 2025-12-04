@@ -11,16 +11,22 @@ import (
 	"milestone3/be/internal/service"
 	"milestone3/be/internal/utils"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
 type ArticleController struct {
 	svc           service.ArticleService
 	storagePublic repository.GCPStorageRepo
+	validator     *validator.Validate
 }
 
 func NewArticleController(s service.ArticleService, storage repository.GCPStorageRepo) *ArticleController {
-	return &ArticleController{svc: s, storagePublic: storage}
+	return &ArticleController{
+		svc:           s,
+		storagePublic: storage,
+		validator:     validator.New(),
+	}
 }
 
 // GetAllArticles godoc
@@ -182,6 +188,10 @@ func (h *ArticleController) CreateArticle(c echo.Context) error {
 		if err := c.Bind(&payload); err != nil {
 			return utils.BadRequestResponse(c, "invalid payload")
 		}
+	}
+
+	if err := h.validator.Struct(payload); err != nil {
+		return utils.BadRequestResponse(c, err.Error())
 	}
 
 	// send to service
