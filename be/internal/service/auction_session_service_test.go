@@ -20,10 +20,9 @@ func TestAuctionSessionService_Create(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockAuctionSessionRepository(ctrl)
-	mockRedis := mocks.NewMockSessionRedisRepository(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	
-	sessionService := NewAuctionSessionService(mockRepo, mockRedis, logger)
+	sessionService := NewAuctionSessionService(mockRepo, logger)
 
 	now := time.Now()
 	future := now.Add(time.Hour)
@@ -43,7 +42,6 @@ func TestAuctionSessionService_Create(t *testing.T) {
 			},
 			setup: func() {
 				mockRepo.EXPECT().Create(gomock.Any()).Return(nil)
-				mockRedis.EXPECT().SetActiveSession(gomock.Any()).Return(nil).AnyTimes()
 			},
 			wantErr: false,
 		},
@@ -103,10 +101,9 @@ func TestAuctionSessionService_GetByID(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockAuctionSessionRepository(ctrl)
-	mockRedis := mocks.NewMockSessionRedisRepository(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	
-	sessionService := NewAuctionSessionService(mockRepo, mockRedis, logger)
+	sessionService := NewAuctionSessionService(mockRepo, logger)
 
 	tests := []struct {
 		name    string
@@ -158,10 +155,9 @@ func TestAuctionSessionService_GetAll(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockAuctionSessionRepository(ctrl)
-	mockRedis := mocks.NewMockSessionRedisRepository(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	
-	sessionService := NewAuctionSessionService(mockRepo, mockRedis, logger)
+	sessionService := NewAuctionSessionService(mockRepo, logger)
 
 	tests := []struct {
 		name    string
@@ -210,9 +206,8 @@ func TestAuctionSessionService_Update(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockAuctionSessionRepository(ctrl)
-	mockRedis := mocks.NewMockSessionRedisRepository(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	sessionService := NewAuctionSessionService(mockRepo, mockRedis, logger)
+	sessionService := NewAuctionSessionService(mockRepo, logger)
 
 	tests := []struct {
 		name    string
@@ -230,7 +225,6 @@ func TestAuctionSessionService_Update(t *testing.T) {
 				session := &entity.AuctionSession{ID: 1, Name: "Old", StartTime: futureTime, EndTime: futureTime.Add(2 * time.Hour)}
 				mockRepo.EXPECT().GetByID(int64(1)).Return(session, nil)
 				mockRepo.EXPECT().Update(gomock.Any()).Return(nil)
-				mockRedis.EXPECT().DeleteSession(int64(1)).Return(nil)
 			},
 			wantErr: false,
 		},
@@ -275,9 +269,8 @@ func TestAuctionSessionService_Delete(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockAuctionSessionRepository(ctrl)
-	mockRedis := mocks.NewMockSessionRedisRepository(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	sessionService := NewAuctionSessionService(mockRepo, mockRedis, logger)
+	sessionService := NewAuctionSessionService(mockRepo, logger)
 
 	tests := []struct {
 		name    string
@@ -293,7 +286,6 @@ func TestAuctionSessionService_Delete(t *testing.T) {
 				session := &entity.AuctionSession{ID: 1, StartTime: futureTime, EndTime: futureTime.Add(2 * time.Hour)}
 				mockRepo.EXPECT().GetByID(int64(1)).Return(session, nil)
 				mockRepo.EXPECT().Delete(int64(1)).Return(nil)
-				mockRedis.EXPECT().DeleteSession(int64(1)).Return(nil)
 			},
 			wantErr: false,
 		},

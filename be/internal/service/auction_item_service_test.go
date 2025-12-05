@@ -10,7 +10,6 @@ import (
 	"milestone3/be/internal/entity"
 	"milestone3/be/internal/mocks"
 
-
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +21,7 @@ func TestAuctionItemService_Create(t *testing.T) {
 	mockRepo := mocks.NewMockAuctionItemRepository(ctrl)
 	mockAI := mocks.NewMockAIRepository(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	
+
 	auctionService := NewAuctionItemService(mockRepo, mockAI, logger)
 
 	tests := []struct {
@@ -75,9 +74,9 @@ func TestAuctionItemService_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			
+
 			result, err := auctionService.Create(&tt.req)
-			
+
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Empty(t, result)
@@ -96,7 +95,7 @@ func TestAuctionItemService_GetAll(t *testing.T) {
 	mockRepo := mocks.NewMockAuctionItemRepository(ctrl)
 	mockAI := mocks.NewMockAIRepository(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	
+
 	auctionService := NewAuctionItemService(mockRepo, mockAI, logger)
 
 	tests := []struct {
@@ -127,9 +126,9 @@ func TestAuctionItemService_GetAll(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			
+
 			result, err := auctionService.GetAll()
-			
+
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, result)
@@ -148,7 +147,7 @@ func TestAuctionItemService_GetByID(t *testing.T) {
 	mockRepo := mocks.NewMockAuctionItemRepository(ctrl)
 	mockAI := mocks.NewMockAIRepository(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	
+
 	auctionService := NewAuctionItemService(mockRepo, mockAI, logger)
 
 	tests := []struct {
@@ -179,9 +178,9 @@ func TestAuctionItemService_GetByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			
+
 			result, err := auctionService.GetByID(tt.id)
-			
+
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Empty(t, result)
@@ -205,14 +204,17 @@ func TestAuctionItemService_Update(t *testing.T) {
 	tests := []struct {
 		name    string
 		id      int64
-		req     *dto.AuctionItemDTO
+		req     *dto.AuctionItemUpdateDTO
 		setup   func()
 		wantErr bool
 	}{
 		{
 			name: "successful update",
 			id:   1,
-			req:  &dto.AuctionItemDTO{Title: "Updated"},
+			req: func() *dto.AuctionItemUpdateDTO {
+				title := "Updated"
+				return &dto.AuctionItemUpdateDTO{Title: &title}
+			}(),
 			setup: func() {
 				item := &entity.AuctionItem{ID: 1, Title: "Old"}
 				mockRepo.EXPECT().GetByID(int64(1)).Return(item, nil)
@@ -223,7 +225,7 @@ func TestAuctionItemService_Update(t *testing.T) {
 		{
 			name: "item not found",
 			id:   999,
-			req:  &dto.AuctionItemDTO{},
+			req:  &dto.AuctionItemUpdateDTO{},
 			setup: func() {
 				mockRepo.EXPECT().GetByID(int64(999)).Return(nil, errors.New("not found"))
 			},
