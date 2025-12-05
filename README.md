@@ -127,7 +127,7 @@ User Adds Notes → Final Donation Complete → Transparency Report
 - **Cloud Platform**: Google Cloud Platform
   - **Compute**: Cloud Run - Serverless, auto-scaling containers
   - **Storage**: Cloud Storage - Secure photo storage
-  - **Database**: Cloud SQL - Managed PostgreSQL
+- **Database**: Supabase - Managed PostgreSQL with real-time capabilities
 - **Containerization**: Docker
 
 ### Third-Party Services
