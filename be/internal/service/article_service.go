@@ -6,12 +6,13 @@ import (
 	"milestone3/be/internal/dto"
 	"milestone3/be/internal/repository"
 
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 type ArticleService interface {
 	CreateArticle(articleDTO dto.ArticleDTO) error
-	GetAllArticles() ([]dto.ArticleDTO, error)
+	GetAllArticles(page, limit int) ([]dto.ArticleDTO, int64, error)
 	GetArticleByID(id uint) (dto.ArticleDTO, error)
 	UpdateArticle(articleDTO dto.ArticleDTO) error
 	DeleteArticle(id uint) error
@@ -28,17 +29,25 @@ func NewArticleService(repo repository.ArticleRepo) ArticleService {
 func (s *articleService) CreateArticle(articleDTO dto.ArticleDTO) error {
 	article, err := dto.ArticleRequest(articleDTO)
 	if err != nil {
+		logrus.WithError(err).Error("Failed to convert DTO to entity")
 		return err
 	}
-	return s.repo.CreateArticle(article)
+	if err := s.repo.CreateArticle(article); err != nil {
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"title": article.Title,
+			"week":  article.Week,
+		}).Error("Failed to insert article to database")
+		return err
+	}
+	return nil
 }
 
-func (s *articleService) GetAllArticles() ([]dto.ArticleDTO, error) {
-	articles, err := s.repo.GetAllArticles()
+func (s *articleService) GetAllArticles(page, limit int) ([]dto.ArticleDTO, int64, error) {
+	articles, total, err := s.repo.GetAllArticles(page, limit)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return dto.ArticleResponses(articles), nil
+	return dto.ArticleResponses(articles), total, nil
 }
 
 func (s *articleService) GetArticleByID(id uint) (dto.ArticleDTO, error) {

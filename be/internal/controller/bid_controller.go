@@ -40,21 +40,23 @@ func getUserIDFromToken(c echo.Context) (int64, error) {
 	return int64(userIDFloat), nil
 }
 
-func isAdminFromToken(c echo.Context) bool {
-	token := c.Get("user")
-	if token == nil {
-		return false
-	}
-
-	claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims)
-	if !ok {
-		return false
-	}
-
-	role, ok := claims["role"].(string)
-	return ok && role == "admin"
-}
-
+// PlaceBid godoc
+// @Summary Place bid on auction item
+// @Description Place a bid on a specific auction item within an active session
+// @Tags Your Donate Rise API - Bidding
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param sessionID path int true "Auction Session ID"
+// @Param itemID path int true "Auction Item ID"
+// @Param bid body dto.BidDTO true "Bid amount"
+// @Success 200 {object} utils.SuccessResponseData "bid placed successfully"
+// @Failure 400 {object} utils.ErrorResponse "Bad request - Invalid parameters or bid too low"
+// @Failure 401 {object} utils.ErrorResponse "Unauthorized - Invalid or missing token"
+// @Failure 404 {object} utils.ErrorResponse "Auction session or item not found"
+// @Failure 409 {object} utils.ErrorResponse "Conflict - Invalid auction state"
+// @Failure 500 {object} utils.ErrorResponse "Internal server error"
+// @Router /auction/sessions/{sessionID}/items/{itemID}/bid [post]
 func (h *BidController) PlaceBid(c echo.Context) error {
 	sessionIDStr := c.Param("sessionID")
 	itemIDStr := c.Param("itemID")
@@ -83,10 +85,19 @@ func (h *BidController) PlaceBid(c echo.Context) error {
 		return utils.UnauthorizedResponse(c, "unauthenticated")
 	}
 
+	// Log request details
+	c.Logger().Infof("PlaceBid request: sessionID=%d, itemID=%d, userID=%d, amount=%.2f",
+		sessionID, itemID, userID, payload.Amount)
+
 	session, err := h.sessionSvc.GetByID(sessionID)
 	if err != nil {
+		c.Logger().Errorf("Failed to get session: %v", err)
 		return utils.NotFoundResponse(c, "auction session not found")
 	}
+
+	c.Logger().Infof("Session found: ID=%d, StartTime=%s, EndTime=%s",
+		session.ID, session.StartTime, session.EndTime)
+
 	err = h.svc.PlaceBid(
 		sessionID,
 		itemID,
@@ -96,6 +107,7 @@ func (h *BidController) PlaceBid(c echo.Context) error {
 	)
 
 	if err != nil {
+		c.Logger().Errorf("PlaceBid error: %v", err)
 		switch err {
 		case service.ErrBidTooLow, service.ErrInvalidBidding:
 			return utils.BadRequestResponse(c, err.Error())
@@ -103,14 +115,33 @@ func (h *BidController) PlaceBid(c echo.Context) error {
 			return utils.NotFoundResponse(c, err.Error())
 		case service.ErrInvalidAuction:
 			return utils.ConflictResponse(c, err.Error())
+		case service.ErrDuplicateBid:
+			return utils.ConflictResponse(c, err.Error())
+		case service.ErrAlreadyHighestBidder:
+			return utils.ConflictResponse(c, "you are already the highest bidder")
 		default:
 			return utils.InternalServerErrorResponse(c, "failed placing bid")
 		}
 	}
 
+	c.Logger().Infof("Bid placed successfully: sessionID=%d, itemID=%d, amount=%.2f",
+		sessionID, itemID, payload.Amount)
 	return utils.SuccessResponse(c, "bid placed successfully", nil)
 }
 
+// GetHighestBid godoc
+// @Summary Get highest bid for auction item
+// @Description Retrieve the current highest bid for a specific auction item
+// @Tags Your Donate Rise API - Bidding
+// @Accept json
+// @Produce json
+// @Param sessionID path int true "Auction Session ID"
+// @Param itemID path int true "Auction Item ID"
+// @Success 200 {object} utils.SuccessResponseData "highest bid retrieved successfully"
+// @Failure 400 {object} utils.ErrorResponse "Bad request - Invalid session or item ID"
+// @Failure 404 {object} utils.ErrorResponse "Auction not found"
+// @Failure 500 {object} utils.ErrorResponse "Internal server error"
+// @Router /auction/sessions/{sessionID}/items/{itemID}/highest-bid [get]
 func (h *BidController) GetHighestBid(c echo.Context) error {
 	sessionIDStr := c.Param("sessionID")
 	itemIDStr := c.Param("itemID")
@@ -143,30 +174,4 @@ func (h *BidController) GetHighestBid(c echo.Context) error {
 	}
 
 	return utils.SuccessResponse(c, "highest bid retrieved successfully", resp)
-}
-
-func (h *BidController) SyncHighestBid(c echo.Context) error {
-	if !isAdminFromToken(c) {
-		return utils.ForbiddenResponse(c, "only admin can sync bids")
-	}
-
-	sessionIDStr := c.Param("sessionID")
-	itemIDStr := c.Param("itemID")
-
-	sessionID, err := strconv.ParseInt(sessionIDStr, 10, 64)
-	if err != nil {
-		return utils.BadRequestResponse(c, "invalid sessionID")
-	}
-
-	itemID, err := strconv.ParseInt(itemIDStr, 10, 64)
-	if err != nil {
-		return utils.BadRequestResponse(c, "invalid itemID")
-	}
-
-	err = h.svc.SyncHighestBid(sessionID, itemID)
-	if err != nil {
-		return utils.InternalServerErrorResponse(c, err.Error())
-	}
-
-	return utils.SuccessResponse(c, "highest bid synced to database", nil)
 }

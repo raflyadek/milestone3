@@ -16,7 +16,12 @@ func ConnectionDb() *gorm.DB {
 	}
 
 	dsn := os.Getenv("POSTGRE_URL")
-	db, err := gorm.Open(postgres.Open(dsn))
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true, // Disable prepared statements completely
+	}), &gorm.Config{
+		PrepareStmt: false,
+	})
 	if err != nil {
 		log.Printf("error connect to database %s", err)
 	}

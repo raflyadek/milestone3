@@ -1,0 +1,1156 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>service: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">milestone3/be/internal/service/admin_service.go (81.8%)</option>
+				
+				<option value="file1">milestone3/be/internal/service/article_service.go (81.2%)</option>
+				
+				<option value="file2">milestone3/be/internal/service/auction_item_service.go (85.2%)</option>
+				
+				<option value="file3">milestone3/be/internal/service/auction_session_service.go (79.7%)</option>
+				
+				<option value="file4">milestone3/be/internal/service/bid_service.go (50.0%)</option>
+				
+				<option value="file5">milestone3/be/internal/service/donation_service.go (64.6%)</option>
+				
+				<option value="file6">milestone3/be/internal/service/final_donation_service.go (27.3%)</option>
+				
+				<option value="file7">milestone3/be/internal/service/payment_service.go (92.0%)</option>
+				
+				<option value="file8">milestone3/be/internal/service/user_service.go (77.4%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package service
+
+import (
+        "log"
+        "milestone3/be/internal/dto"
+)
+
+type AdminRepository interface {
+        CountPayment() (count int64, err error)
+        CountDonation() (count int64, err error)
+        CountArticle() (count int64, err error)
+        CountAuction() (count int64, err error)
+}
+
+type AdminServ struct {
+        adminRepo AdminRepository
+}
+
+func NewAdminService(ar AdminRepository) *AdminServ <span class="cov8" title="1">{
+        return &amp;AdminServ{adminRepo: ar}
+}</span>
+
+func (as *AdminServ) AdminDashboard() (resp dto.AdminDashboardResponse, err error) <span class="cov8" title="1">{
+        log.Println("article")
+        article, err := as.adminRepo.CountArticle()
+        if err != nil </span><span class="cov8" title="1">{
+                log.Printf("error count article %s", err)
+                return dto.AdminDashboardResponse{}, err
+        }</span>
+
+        <span class="cov8" title="1">log.Println("donation")
+        donation, err := as.adminRepo.CountDonation() 
+        if err != nil </span><span class="cov8" title="1">{
+                log.Printf("error count donation %s", err)
+                return dto.AdminDashboardResponse{}, err
+        }</span>
+
+        <span class="cov8" title="1">log.Println("payment")
+        payment, err := as.adminRepo.CountPayment()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("error count payment %s", err)
+                return dto.AdminDashboardResponse{}, err
+        }</span>
+
+        <span class="cov8" title="1">auction, err := as.adminRepo.CountAuction(); 
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("error count payment %s", err)
+                return dto.AdminDashboardResponse{}, err
+        }</span>
+
+        <span class="cov8" title="1">respon := dto.AdminDashboardResponse{
+                TotalArticle: article,
+                TotalDonation: donation,
+                TotalPayment: payment,
+                TotalAuction: auction,
+        }
+
+        return respon, nil</span>
+}
+
+// work in progress (WIP)
+// func (as *AdminServ) AdminReport() (err error) { }</pre>
+		
+		<pre class="file" id="file1" style="display: none">package service
+
+import (
+        "errors"
+
+        "milestone3/be/internal/dto"
+        "milestone3/be/internal/repository"
+
+        "github.com/sirupsen/logrus"
+        "gorm.io/gorm"
+)
+
+type ArticleService interface {
+        CreateArticle(articleDTO dto.ArticleDTO) error
+        GetAllArticles(page, limit int) ([]dto.ArticleDTO, int64, error)
+        GetArticleByID(id uint) (dto.ArticleDTO, error)
+        UpdateArticle(articleDTO dto.ArticleDTO) error
+        DeleteArticle(id uint) error
+}
+
+type articleService struct {
+        repo repository.ArticleRepo
+}
+
+func NewArticleService(repo repository.ArticleRepo) ArticleService <span class="cov8" title="1">{
+        return &amp;articleService{repo: repo}
+}</span>
+
+func (s *articleService) CreateArticle(articleDTO dto.ArticleDTO) error <span class="cov8" title="1">{
+        article, err := dto.ArticleRequest(articleDTO)
+        if err != nil </span><span class="cov0" title="0">{
+                logrus.WithError(err).Error("Failed to convert DTO to entity")
+                return err
+        }</span>
+        <span class="cov8" title="1">if err := s.repo.CreateArticle(article); err != nil </span><span class="cov8" title="1">{
+                logrus.WithError(err).WithFields(logrus.Fields{
+                        "title": article.Title,
+                        "week":  article.Week,
+                }).Error("Failed to insert article to database")
+                return err
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *articleService) GetAllArticles(page, limit int) ([]dto.ArticleDTO, int64, error) <span class="cov8" title="1">{
+        articles, total, err := s.repo.GetAllArticles(page, limit)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, 0, err
+        }</span>
+        <span class="cov8" title="1">return dto.ArticleResponses(articles), total, nil</span>
+}
+
+func (s *articleService) GetArticleByID(id uint) (dto.ArticleDTO, error) <span class="cov8" title="1">{
+        article, err := s.repo.GetArticleByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        return dto.ArticleDTO{}, ErrArticleNotFound
+                }</span>
+                <span class="cov0" title="0">return dto.ArticleDTO{}, err</span>
+        }
+        <span class="cov8" title="1">return dto.ArticleResponse(article), nil</span>
+}
+
+func (s *articleService) UpdateArticle(articleDTO dto.ArticleDTO) error <span class="cov8" title="1">{
+        article, err := dto.ArticleRequest(articleDTO)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if err := s.repo.UpdateArticle(article); err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        return ErrArticleNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *articleService) DeleteArticle(id uint) error <span class="cov8" title="1">{
+        if err := s.repo.DeleteArticle(id); err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        return ErrArticleNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package service
+
+import (
+        "log/slog"
+        "milestone3/be/internal/dto"
+        "milestone3/be/internal/repository"
+)
+
+type itemsService struct {
+        repo   repository.AuctionItemRepository
+        logger *slog.Logger
+        ai     repository.AIRepository
+}
+
+type AuctionItemService interface {
+        Create(item *dto.AuctionItemDTO) (dto.AuctionItemDTO, error)
+        GetAll() ([]dto.AuctionItemDTO, error)
+        GetByID(id int64) (dto.AuctionItemDTO, error)
+        Update(id int64, item *dto.AuctionItemDTO) (dto.AuctionItemDTO, error)
+        Delete(id int64) error
+}
+
+func NewAuctionItemService(r repository.AuctionItemRepository, aiRepo repository.AIRepository, logger *slog.Logger) AuctionItemService <span class="cov8" title="1">{
+        return &amp;itemsService{repo: r, logger: logger, ai: aiRepo}
+}</span>
+
+func (s *itemsService) Create(itemDTO *dto.AuctionItemDTO) (dto.AuctionItemDTO, error) <span class="cov8" title="1">{
+        item, err := dto.AuctionItemRequest(*itemDTO)
+        if err != nil </span><span class="cov0" title="0">{
+                return dto.AuctionItemDTO{}, ErrInvalidAuction
+        }</span>
+
+        <span class="cov8" title="1">estimationReq := repository.PriceEstimationRequest{
+                Name:        itemDTO.Title,
+                Category:    itemDTO.Category,
+                Description: itemDTO.Description,
+        }
+
+        estimatedPrice, err := s.ai.EstimateStartingPrice(estimationReq)
+        if err != nil </span><span class="cov8" title="1">{
+                // AI estimation failed — log and fallback to provided starting price or sensible default
+                s.logger.Warn("EstimateStartingPrice failed, falling back to provided/default price", "error", err)
+                // prefer client-provided StartingPrice if present
+                if itemDTO.StartingPrice &gt; 0 </span><span class="cov0" title="0">{
+                        estimatedPrice = itemDTO.StartingPrice
+                }</span> else<span class="cov8" title="1"> {
+                        // sensible default to avoid blocking creation
+                        estimatedPrice = 100
+                }</span>
+        }
+
+        <span class="cov8" title="1">item.StartingPrice = estimatedPrice
+
+        if item.Status == "" </span><span class="cov0" title="0">{
+                item.Status = "scheduled"
+        }</span>
+
+        <span class="cov8" title="1">err = s.repo.Create(&amp;item)
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("Failed to create auction item", "error", err)
+                return dto.AuctionItemDTO{}, ErrInvalidAuction
+        }</span>
+
+        <span class="cov8" title="1">return dto.AuctionItemResponse(item), nil</span>
+}
+
+func (s *itemsService) GetAll() ([]dto.AuctionItemDTO, error) <span class="cov8" title="1">{
+        </span><span class="cov8" title="1">{
+                items, err := s.repo.GetAll()
+                if err != nil </span><span class="cov8" title="1">{
+                        s.logger.Error("Failed to get all auction items", "error", err)
+                        return nil, ErrAuctionNotFound
+                }</span>
+
+                <span class="cov8" title="1">var itemDTOs []dto.AuctionItemDTO
+                for _, item := range items </span><span class="cov8" title="1">{
+                        itemDTOs = append(itemDTOs, dto.AuctionItemResponse(item))
+                }</span>
+
+                <span class="cov8" title="1">return itemDTOs, nil</span>
+        }
+}
+
+func (s *itemsService) GetByID(id int64) (dto.AuctionItemDTO, error) <span class="cov8" title="1">{
+        item, err := s.repo.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return dto.AuctionItemDTO{}, ErrAuctionNotFoundID
+        }</span>
+        <span class="cov8" title="1">return dto.AuctionItemResponse(*item), nil</span>
+}
+
+func (s *itemsService) Update(id int64, itemDTO *dto.AuctionItemDTO) (dto.AuctionItemDTO, error) <span class="cov8" title="1">{
+        existingItem, err := s.repo.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("Failed to get auction item by ID for update", "error", err)
+                return dto.AuctionItemDTO{}, ErrAuctionNotFoundID
+        }</span>
+
+        <span class="cov8" title="1">updatedItem, err := dto.AuctionItemRequest(*itemDTO)
+        if err != nil </span><span class="cov0" title="0">{
+                return dto.AuctionItemDTO{}, ErrInvalidAuction
+        }</span>
+
+        <span class="cov8" title="1">updatedItem.ID = existingItem.ID
+        updatedItem.CreatedAt = existingItem.CreatedAt
+
+        err = s.repo.Update(&amp;updatedItem)
+        if err != nil </span><span class="cov0" title="0">{
+                s.logger.Error("Failed to update auction item", "error", err)
+                return dto.AuctionItemDTO{}, ErrInvalidAuction
+        }</span>
+
+        <span class="cov8" title="1">return dto.AuctionItemResponse(updatedItem), nil</span>
+}
+
+func (s *itemsService) Delete(id int64) error <span class="cov8" title="1">{
+        _, err := s.repo.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return ErrAuctionNotFoundID
+        }</span>
+
+        <span class="cov8" title="1">err = s.repo.Delete(id)
+        if err != nil </span><span class="cov0" title="0">{
+                s.logger.Error("Failed to delete auction item", "error", err)
+                return ErrInvalidAuction
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package service
+
+import (
+        "log/slog"
+        "milestone3/be/internal/dto"
+        "milestone3/be/internal/entity"
+        "milestone3/be/internal/repository"
+        "time"
+)
+
+type sessionService struct {
+        repo      repository.AuctionSessionRepository
+        redisRepo repository.SessionRedisRepository
+        logger    *slog.Logger
+}
+
+type AuctionSessionService interface {
+        Create(session *dto.AuctionSessionDTO) (dto.AuctionSessionDTO, error)
+        GetByID(id int64) (dto.AuctionSessionDTO, error)
+        GetAll() ([]dto.AuctionSessionDTO, error)
+        Update(id int64, session *dto.AuctionSessionDTO) (dto.AuctionSessionDTO, error)
+        Delete(id int64) error
+}
+
+func NewAuctionSessionService(r repository.AuctionSessionRepository, rr repository.SessionRedisRepository, logger *slog.Logger) AuctionSessionService <span class="cov8" title="1">{
+        return &amp;sessionService{repo: r, redisRepo: rr, logger: logger}
+}</span>
+
+func (s *sessionService) Create(d *dto.AuctionSessionDTO) (dto.AuctionSessionDTO, error) <span class="cov8" title="1">{
+        if d.Name == "" || d.EndTime.Before(d.StartTime) </span><span class="cov8" title="1">{
+                return dto.AuctionSessionDTO{}, ErrInvalidAuction
+        }</span>
+
+        <span class="cov8" title="1">session := entity.AuctionSession{
+                Name:      d.Name,
+                StartTime: d.StartTime,
+                EndTime:   d.EndTime,
+        }
+
+        err := s.repo.Create(&amp;session)
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("Failed to create auction session", "error", err)
+                return dto.AuctionSessionDTO{}, ErrInvalidAuction
+        }</span>
+
+        <span class="cov8" title="1">now := time.Now()
+        if session.StartTime.Before(now) &amp;&amp; session.EndTime.After(now) </span><span class="cov8" title="1">{
+                if err := s.redisRepo.SetActiveSession(session); err != nil </span><span class="cov0" title="0">{
+                        s.logger.Error("Failed to cache active session in Redis", "error", err)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return dto.AuctionSessionResponse(session), nil</span>
+}
+
+func (s *sessionService) GetByID(id int64) (dto.AuctionSessionDTO, error) <span class="cov8" title="1">{
+        session, err := s.repo.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("Failed to get auction session by ID", "error", err)
+                return dto.AuctionSessionDTO{}, ErrSessionNotFoundID
+        }</span>
+
+        <span class="cov8" title="1">return dto.AuctionSessionResponse(*session), nil</span>
+}
+
+func (s *sessionService) GetAll() ([]dto.AuctionSessionDTO, error) <span class="cov8" title="1">{
+        sessions, err := s.repo.GetAll()
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("Failed to get all auction sessions", "error", err)
+                return nil, ErrSessionNotFoundID
+        }</span>
+
+        <span class="cov8" title="1">var sessionDTOs []dto.AuctionSessionDTO
+        for _, session := range sessions </span><span class="cov8" title="1">{
+                sessionDTOs = append(sessionDTOs, dto.AuctionSessionResponse(*session))
+        }</span>
+
+        <span class="cov8" title="1">return sessionDTOs, nil</span>
+}
+
+func (s *sessionService) Update(id int64, d *dto.AuctionSessionDTO) (dto.AuctionSessionDTO, error) <span class="cov8" title="1">{
+        session, err := s.repo.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("Failed to get auction session by ID for update", "error", err)
+                return dto.AuctionSessionDTO{}, ErrSessionNotFoundID
+        }</span>
+
+        <span class="cov8" title="1">now := time.Now()
+        if session.StartTime.Before(now) &amp;&amp; session.EndTime.After(now) </span><span class="cov8" title="1">{
+                return dto.AuctionSessionDTO{}, ErrActiveSession
+        }</span>
+        <span class="cov8" title="1">if session.EndTime.Before(now) </span><span class="cov0" title="0">{
+                return dto.AuctionSessionDTO{}, ErrInvalidDate
+        }</span>
+
+        <span class="cov8" title="1">if d.Name != "" </span><span class="cov8" title="1">{
+                session.Name = d.Name
+        }</span>
+        <span class="cov8" title="1">if !d.StartTime.IsZero() </span><span class="cov0" title="0">{
+                session.StartTime = d.StartTime
+        }</span>
+        <span class="cov8" title="1">if !d.EndTime.IsZero() </span><span class="cov0" title="0">{
+                session.EndTime = d.EndTime
+        }</span>
+
+        <span class="cov8" title="1">if session.EndTime.Before(session.StartTime) </span><span class="cov0" title="0">{
+                return dto.AuctionSessionDTO{}, ErrInvalidDate
+        }</span>
+
+        // assign to DB
+        <span class="cov8" title="1">err = s.repo.Update(session)
+        if err != nil </span><span class="cov0" title="0">{
+                s.logger.Error("Failed to update auction session", "error", err)
+                return dto.AuctionSessionDTO{}, ErrInvalidAuction
+        }</span>
+
+        // update Redis if session is active
+        <span class="cov8" title="1">if session.StartTime.Before(now) &amp;&amp; session.EndTime.After(now) </span><span class="cov0" title="0">{
+                if err := s.redisRepo.SetActiveSession(*session); err != nil </span><span class="cov0" title="0">{
+                        s.logger.Error("Failed to update active session in Redis", "error", err)
+                }</span>
+        } else<span class="cov8" title="1"> {
+                if err := s.redisRepo.DeleteSession(session.ID); err != nil </span><span class="cov0" title="0">{
+                        s.logger.Error("Failed to delete session from Redis", "error", err)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return dto.AuctionSessionResponse(*session), nil</span>
+}
+
+func (s *sessionService) Delete(id int64) error <span class="cov8" title="1">{
+        session, err := s.repo.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("Failed to get auction session by ID for delete", "error", err)
+                return ErrSessionNotFoundID
+        }</span>
+
+        <span class="cov8" title="1">now := time.Now()
+
+        if session.StartTime.Before(now) &amp;&amp; session.EndTime.After(now) </span><span class="cov8" title="1">{
+                return ErrActiveSession
+        }</span>
+
+        <span class="cov8" title="1">if session.EndTime.Before(now) </span><span class="cov0" title="0">{
+                return ErrInvalidDate
+        }</span>
+
+        <span class="cov8" title="1">err = s.repo.Delete(id)
+        if err != nil </span><span class="cov0" title="0">{
+                s.logger.Error("Failed to delete auction session", "error", err)
+                return ErrInvalidAuction
+        }</span>
+
+        <span class="cov8" title="1">if err := s.redisRepo.DeleteSession(session.ID); err != nil </span><span class="cov0" title="0">{
+                s.logger.Error("Failed to delete session from Redis", "error", err)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package service
+
+import (
+        "errors"
+        "log/slog"
+        "milestone3/be/internal/entity"
+        "milestone3/be/internal/repository"
+        "strconv"
+        "strings"
+        "time"
+
+        "github.com/redis/go-redis/v9"
+)
+
+type bidService struct {
+        redisRepo repository.BidRedisRepository
+        bidRepo   repository.BidRepository
+        itemRepo  repository.AuctionItemRepository
+        logger    *slog.Logger
+}
+
+type BidService interface {
+        PlaceBid(sessionID, itemID, userID int64, amount float64, sessionEndTime time.Time) error
+        GetHighestBid(sessionID, itemID int64) (float64, int64, error)
+        SyncHighestBid(sessionID, itemID int64) error
+
+        SaveExpiredSessions(sessionID int64) error
+}
+
+func NewBidService(r repository.BidRedisRepository, b repository.BidRepository, itemRepo repository.AuctionItemRepository, logger *slog.Logger) BidService <span class="cov8" title="1">{
+        return &amp;bidService{redisRepo: r, bidRepo: b, itemRepo: itemRepo, logger: logger}
+}</span>
+
+func (s *bidService) PlaceBid(sessionID, itemID, userID int64, amount float64, sessionEndTime time.Time) error <span class="cov8" title="1">{
+        if amount &lt;= 0 </span><span class="cov8" title="1">{
+                return ErrInvalidBidding
+        }</span>
+
+        <span class="cov8" title="1">item, err := s.itemRepo.GetByID(itemID)
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("item not found", "itemID", itemID, "error", err)
+                return ErrAuctionNotFound
+        }</span>
+
+        <span class="cov8" title="1">s.logger.Info("item found", "itemID", itemID, "status", item.Status, "sessionID", item.SessionID)
+
+        if item.Status != "ongoing" </span><span class="cov8" title="1">{
+                s.logger.Warn("item not ongoing", "itemID", itemID, "status", item.Status)
+                return ErrInvalidAuction
+        }</span>
+
+        <span class="cov8" title="1">highest, bidder, err := s.redisRepo.GetHighestBid(sessionID, itemID)
+        if err != nil &amp;&amp; !errors.Is(err, redis.Nil) </span><span class="cov0" title="0">{
+                s.logger.Error("failed to get highest bid", "error", err)
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if amount &lt;= highest </span><span class="cov8" title="1">{
+                return ErrBidTooLow
+        }</span>
+
+        <span class="cov8" title="1">err = s.redisRepo.SetHighestBid(sessionID, itemID, amount, userID, sessionEndTime)
+        if err != nil </span><span class="cov0" title="0">{
+                s.logger.Error("failed to set highest bid", "error", err)
+                return err
+        }</span>
+
+        <span class="cov8" title="1">s.logger.Info("new highest bid",
+                "itemID", itemID,
+                "userID", userID,
+                "oldBid", highest,
+                "oldBidder", bidder,
+                "newBid", amount,
+        )
+
+        return nil</span>
+}
+
+func (s *bidService) GetHighestBid(sessionID, itemID int64) (float64, int64, error) <span class="cov8" title="1">{
+        _, err := s.itemRepo.GetByID(itemID)
+        if err != nil </span><span class="cov8" title="1">{
+                return 0, 0, ErrAuctionNotFound
+        }</span>
+        <span class="cov8" title="1">return s.redisRepo.GetHighestBid(sessionID, itemID)</span>
+}
+
+func (s *bidService) SyncHighestBid(sessionID, itemID int64) error <span class="cov8" title="1">{
+        highest, bidder, err := s.redisRepo.GetHighestBid(sessionID, itemID)
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("failed to get highest bid", "error", err)
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if highest == 0 || bidder == 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">finalBid := &amp;entity.Bid{
+                SessionID: sessionID,
+                ItemID:    itemID,
+                Amount:    highest,
+                UserID:    bidder,
+        }
+
+        err = s.bidRepo.SaveFinalBid(finalBid)
+        if err != nil </span><span class="cov0" title="0">{
+                s.logger.Error("failed to save final bid to postgres", "error", err)
+                return err
+        }</span>
+
+        <span class="cov8" title="1">s.logger.Info("highest bid synced to postgres",
+                "sessionID", sessionID,
+                "itemID", itemID,
+                "bid", highest,
+                "bidder", bidder,
+        )
+
+        return nil</span>
+}
+
+func parseKey(key string) (sessionID, itemID int64, err error) <span class="cov0" title="0">{
+        parts := strings.Split(key, ":")
+        // format: auction_session:{sessionID}:item:{itemID}
+        sID, err := strconv.ParseInt(parts[1], 10, 64)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, 0, err
+        }</span>
+
+        <span class="cov0" title="0">iID, err := strconv.ParseInt(parts[3], 10, 64)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, 0, err
+        }</span>
+
+        <span class="cov0" title="0">return sID, iID, nil</span>
+}
+
+func (s *bidService) SaveExpiredSessions(sessionID int64) error <span class="cov0" title="0">{
+        keys, err := s.redisRepo.ScanKeys("auction_session:*:item:*")
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">for _, key := range keys </span><span class="cov0" title="0">{
+                // get key: auction_session:10:item:5
+                sessionID, itemID, err := parseKey(key)
+                if err != nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                // result from bid redis
+                <span class="cov0" title="0">bid, err := s.redisRepo.GetBidByKey(key)
+                if err != nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                // get end time
+                <span class="cov0" title="0">endTime, err := s.redisRepo.GetSessionEndTime(sessionID)
+                if err != nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">if time.Now().Before(endTime) </span><span class="cov0" title="0">{
+                        continue</span> // belum expired
+                }
+
+                // assign to DB
+                <span class="cov0" title="0">err = s.bidRepo.SaveFinalBid(&amp;entity.Bid{
+                        SessionID: sessionID,
+                        ItemID:    itemID,
+                        UserID:    bid.UserID,
+                        Amount:    bid.Amount,
+                })
+                if err != nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">_ = s.redisRepo.DeleteKey(key)</span>
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package service
+
+import (
+        "context"
+        "errors"
+        "io"
+        "time"
+
+        "milestone3/be/internal/dto"
+        "milestone3/be/internal/repository"
+
+        "github.com/sirupsen/logrus"
+        "gorm.io/gorm"
+)
+
+type DonationService interface {
+        CreateDonation(donationDTO dto.DonationDTO) error
+        GetAllDonations(userID uint, isAdmin bool, page, limit int) ([]dto.DonationDTO, int64, error)
+        GetDonationByID(id uint) (dto.DonationDTO, error)
+        UpdateDonation(donationDTO dto.DonationDTO, userID uint, isAdmin bool) error
+        DeleteDonation(id uint, userID uint, isAdmin bool) error
+        PatchDonation(donationDTO dto.DonationDTO, userID uint, isAdmin bool) error
+        CanManageDonations(userID uint, ownerID uint, isAdmin bool) bool
+}
+
+type donationService struct {
+        repo         repository.DonationRepo
+        privateStore repository.GCPStorageRepo
+}
+
+func NewDonationService(repo repository.DonationRepo, privateStore repository.GCPStorageRepo) DonationService <span class="cov8" title="1">{
+        return &amp;donationService{
+                repo:         repo,
+                privateStore: privateStore,
+        }
+}</span>
+
+func (s *donationService) CreateDonation(donationDTO dto.DonationDTO) error <span class="cov8" title="1">{
+        donation, err := dto.DonationRequest(donationDTO)
+        if err != nil </span><span class="cov0" title="0">{
+                logrus.WithError(err).Error("Failed to convert DTO to entity")
+                return err
+        }</span>
+        <span class="cov8" title="1">if err := s.repo.CreateDonation(donation); err != nil </span><span class="cov8" title="1">{
+                logrus.WithError(err).WithFields(logrus.Fields{
+                        "user_id": donation.UserID,
+                        "title":   donation.Title,
+                }).Error("Failed to insert donation to database")
+                return err
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *donationService) GetAllDonations(userID uint, isAdmin bool, page, limit int) ([]dto.DonationDTO, int64, error) <span class="cov8" title="1">{
+        if isAdmin </span><span class="cov8" title="1">{
+                donations, total, err := s.repo.GetAllDonations(page, limit)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, 0, err
+                }</span>
+                <span class="cov8" title="1">return dto.DonationResponses(donations), total, nil</span>
+        }
+        <span class="cov8" title="1">donations, total, err := s.repo.GetDonationsByUserID(userID, page, limit)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, 0, err
+        }</span>
+        <span class="cov8" title="1">return dto.DonationResponses(donations), total, nil</span>
+}
+
+func (s *donationService) GetDonationByID(id uint) (dto.DonationDTO, error) <span class="cov8" title="1">{
+        donation, err := s.repo.GetDonationByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        return dto.DonationDTO{}, ErrDonationNotFound
+                }</span>
+                <span class="cov0" title="0">return dto.DonationDTO{}, err</span>
+        }
+        <span class="cov8" title="1">return dto.DonationResponse(donation), nil</span>
+}
+
+func (s *donationService) UpdateDonation(donationDTO dto.DonationDTO, userID uint, isAdmin bool) error <span class="cov8" title="1">{
+        donation, err := dto.DonationRequest(donationDTO)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">existing, err := s.repo.GetDonationByID(donation.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return ErrDonationNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">if !s.CanManageDonations(userID, existing.UserID, isAdmin) </span><span class="cov8" title="1">{
+                return ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">return s.repo.UpdateDonation(donation)</span>
+}
+
+func (s *donationService) DeleteDonation(id uint, userID uint, isAdmin bool) error <span class="cov8" title="1">{
+        donation, err := s.repo.GetDonationByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        return ErrDonationNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">if !s.CanManageDonations(userID, donation.UserID, isAdmin) </span><span class="cov0" title="0">{
+                return ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">return s.repo.DeleteDonation(id)</span>
+}
+
+func (s *donationService) PatchDonation(donationDTO dto.DonationDTO, userID uint, isAdmin bool) error <span class="cov8" title="1">{
+        donation, err := dto.DonationRequest(donationDTO)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">existing, err := s.repo.GetDonationByID(donation.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return ErrDonationNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">if !s.CanManageDonations(userID, existing.UserID, isAdmin) </span><span class="cov0" title="0">{
+                return ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">return s.repo.PatchDonation(donation)</span>
+}
+
+func (s *donationService) CanManageDonations(userID uint, ownerID uint, isAdmin bool) bool <span class="cov8" title="1">{
+        if isAdmin </span><span class="cov8" title="1">{
+                return true
+        }</span>
+        <span class="cov8" title="1">return userID == ownerID</span>
+}
+
+// ======================
+//  METHODS FOR GCS
+// ======================
+
+func (s *donationService) UploadDonationImage(ctx context.Context, file io.Reader, fileName string) (string, error) <span class="cov0" title="0">{
+        objectName, err := s.privateStore.UploadFile(ctx, file, fileName)
+        if err != nil </span><span class="cov0" title="0">{
+                return ErrImageNotFound.Error(), err
+        }</span>
+        <span class="cov0" title="0">return objectName, nil</span>
+}
+
+func (s *donationService) GetDonationImageURL(ctx context.Context, objectName string) (string, error) <span class="cov0" title="0">{
+        url, err := s.privateStore.GenerateSignedURL(ctx, objectName, 10*time.Minute)
+        if err != nil </span><span class="cov0" title="0">{
+                return ErrSignedURLFailed.Error(), err
+        }</span>
+        <span class="cov0" title="0">return url, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package service
+
+import (
+        "milestone3/be/internal/entity"
+        "milestone3/be/internal/repository"
+)
+
+type FinalDonationService interface {
+        GetAllFinalDonations(page, limit int) ([]entity.FinalDonation, int64, error)
+        GetAllFinalDonationsByUserID(userID int) ([]entity.FinalDonation, error)
+        UpdateNotes(donationID uint, userID uint, notes string) error
+}
+
+type finalDonationService struct {
+        finalDonationRepo repository.FinalDonationRepository
+        donationRepo      repository.DonationRepo
+}
+
+func NewFinalDonationService(finalDonationRepo repository.FinalDonationRepository, donationRepo repository.DonationRepo) FinalDonationService <span class="cov8" title="1">{
+        return &amp;finalDonationService{
+                finalDonationRepo: finalDonationRepo,
+                donationRepo:      donationRepo,
+        }
+}</span>
+
+func (s *finalDonationService) GetAllFinalDonations(page, limit int) ([]entity.FinalDonation, int64, error) <span class="cov8" title="1">{
+        return s.finalDonationRepo.GetAllFinalDonations(page, limit)
+}</span>
+
+func (s *finalDonationService) GetAllFinalDonationsByUserID(userID int) ([]entity.FinalDonation, error) <span class="cov8" title="1">{
+        return s.finalDonationRepo.GetAllFinalDonationsByUserID(userID)
+}</span>
+
+func (s *finalDonationService) UpdateNotes(donationID uint, userID uint, notes string) error <span class="cov0" title="0">{
+        // Get donation to check ownership and status
+        donation, err := s.donationRepo.GetDonationByID(donationID)
+        if err != nil </span><span class="cov0" title="0">{
+                return ErrDonationNotFound
+        }</span>
+
+        // Check ownership first
+        <span class="cov0" title="0">if donation.UserID != userID </span><span class="cov0" title="0">{
+                return ErrForbidden
+        }</span>
+
+        // Check if status is verified_for_donation
+        <span class="cov0" title="0">if donation.Status != entity.StatusVerifiedForDonation </span><span class="cov0" title="0">{
+                return ErrDonationNotVerified
+        }</span>
+
+        <span class="cov0" title="0">return s.finalDonationRepo.UpdateNotes(donationID, notes)</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package service
+
+import (
+        "fmt"
+        "log"
+        "milestone3/be/internal/dto"
+        "milestone3/be/internal/entity"
+
+        "github.com/google/uuid"
+)
+
+type PaymentRepository interface {
+        Create(payment *entity.Payment, orderId string) (error)
+        CreateMidtrans(payment entity.Payment, orderId string) (res dto.PaymentResponse, err error)
+        CheckPaymentStatusMidtrans(orderId string) (res dto.CheckPaymentStatusResponse, err error)
+        GetById(id int) (payment entity.Payment, err error)
+        GetAll() (payment []entity.Payment, err error)
+}
+
+type PaymentServ struct {
+        paymentRepo PaymentRepository
+}
+
+func NewPaymentService(pr PaymentRepository) *PaymentServ <span class="cov8" title="1">{
+        return &amp;PaymentServ{paymentRepo: pr}
+}</span>
+
+func (ps *PaymentServ) CreatePayment(req dto.PaymentRequest, userId int, auctionItemId int) (res dto.PaymentResponse, err error) <span class="cov8" title="1">{
+        //random id for order id
+        uuid := uuid.New()
+        orderId := fmt.Sprintf("YDR-%d", uuid.ID())
+        
+        payment := entity.Payment{
+                Amount: req.Amount,
+                UserId: userId,
+                //hard code for now 
+                AuctionItemId: auctionItemId,
+        }
+
+        
+        log.Println("disini nih")
+        resp, _ := ps.paymentRepo.CreateMidtrans(payment, orderId)
+        
+        if err := ps.paymentRepo.Create(&amp;payment, resp.OrderId); err != nil </span><span class="cov8" title="1">{
+                log.Printf("error create payment %s", err)
+                return dto.PaymentResponse{}, err
+        }</span>
+        <span class="cov8" title="1">return resp, nil</span>
+}
+
+func (ps *PaymentServ) CheckPaymentStatusMidtrans(orderId string) (res dto.CheckPaymentStatusResponse, err error) <span class="cov0" title="0">{
+        resp, _:= ps.paymentRepo.CheckPaymentStatusMidtrans(orderId)
+
+        return resp, nil
+}</span>
+
+func (ps *PaymentServ) GetPaymentById(id int) (res dto.PaymentInfoResponse, err error) <span class="cov8" title="1">{
+        resp, err := ps.paymentRepo.GetById(id)
+        if err != nil </span><span class="cov8" title="1">{
+                log.Printf("failed get payment by id %s", err)
+                return dto.PaymentInfoResponse{}, err
+        }</span>
+
+        <span class="cov8" title="1">res = dto.PaymentInfoResponse{
+                Id: resp.Id,
+                UserId: resp.UserId,
+                User: resp.User,
+                AuctionItemId: resp.AuctionItemId,
+                Status: resp.Status,
+                // PaymentStatus: resp.PaymentStatus,
+                Amount: resp.Amount,
+        }
+
+        return res, nil</span>
+}
+
+func (ps *PaymentServ) GetAllPayment() (res []dto.PaymentInfoResponse, err error) <span class="cov8" title="1">{
+        resp, err := ps.paymentRepo.GetAll()
+        if err != nil </span><span class="cov8" title="1">{
+                log.Printf("failed get all payment info %s", err)
+                return []dto.PaymentInfoResponse{}, err
+        }</span>
+
+        <span class="cov8" title="1">for _, payment := range resp </span><span class="cov8" title="1">{
+                res = append(res, dto.PaymentInfoResponse{
+                Id: payment.Id,
+                UserId: payment.UserId,
+                User: payment.User,
+                AuctionItemId: payment.AuctionItemId,
+                Status: payment.Status,
+                // PaymentStatus: payment.PaymentStatus,
+                Amount: payment.Amount,
+                })
+        }</span>
+
+        <span class="cov8" title="1">return res, nil</span>
+}</pre>
+		
+		<pre class="file" id="file8" style="display: none">package service
+
+import (
+        "errors"
+        "log"
+
+        "golang.org/x/crypto/bcrypt"
+
+        "milestone3/be/internal/dto"
+        "milestone3/be/internal/entity"
+        "milestone3/be/internal/utils"
+
+        "gorm.io/gorm"
+)
+
+type UserRepository interface {
+        Create(user *entity.Users) error
+        GetByEmail(email string) (user entity.Users, err error)
+        GetById(id int) (user entity.Users, err error)
+}
+
+type UserServ struct {
+        userRepo UserRepository
+}
+
+func NewUserService(ur UserRepository) *UserServ <span class="cov8" title="1">{
+        return &amp;UserServ{userRepo: ur}
+}</span>
+
+func (us *UserServ) CreateUser(req dto.UserRequest) (res dto.UserResponse, err error) <span class="cov8" title="1">{
+        passHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("error encrypt password")
+                return dto.UserResponse{}, err
+        }</span>
+
+        <span class="cov8" title="1">req.Password = string(passHash)
+
+        user := entity.Users{
+                Name:     req.Name,
+                Email:    req.Email,
+                Password: req.Password,
+        }
+
+        if err := us.userRepo.Create(&amp;user); err != nil </span><span class="cov8" title="1">{
+                return dto.UserResponse{}, err
+        }</span>
+
+        //get user id to show in the response
+        <span class="cov8" title="1">userInfo, err := us.GetUserById(user.Id)
+        if err != nil </span><span class="cov8" title="1">{
+                log.Println("failed get user by id")
+                return dto.UserResponse{}, err
+        }</span>
+
+        <span class="cov8" title="1">return userInfo, nil</span>
+}
+
+func (us *UserServ) GetUserById(id int) (res dto.UserResponse, err error) <span class="cov8" title="1">{
+        user, err := us.userRepo.GetById(id)
+        if err != nil </span><span class="cov8" title="1">{
+                log.Println("failed get user by id")
+                return dto.UserResponse{}, err
+        }</span>
+
+        <span class="cov8" title="1">userInfo := dto.UserResponse{
+                Id:    user.Id,
+                Name:  user.Name,
+                Email: user.Email,
+                Role:  user.Role,
+        }
+
+        return userInfo, nil</span>
+}
+
+func (us *UserServ) GetUserByEmail(email, password string) (accessToken string, err error) <span class="cov8" title="1">{
+        user, err := us.userRepo.GetByEmail(email)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return "", ErrInvalidCredential
+                }</span>
+                <span class="cov8" title="1">return "", err</span>
+        }
+
+        <span class="cov8" title="1">if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil </span><span class="cov8" title="1">{
+                return "", ErrInvalidCredential
+        }</span>
+
+        <span class="cov0" title="0">token, err := utils.GenerateJwtToken(email, user.Role, user.Id)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov0" title="0">return token, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

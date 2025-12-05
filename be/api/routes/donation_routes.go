@@ -7,17 +7,12 @@ import (
 
 func (r *EchoRouter) RegisterDonationRoutes(donationCtrl *controller.DonationController) {
 	donationRoutes := r.echo.Group("/donations")
+	donationRoutes.Use(middleware.JWTMiddleware)
 
-	// public
 	donationRoutes.GET("", donationCtrl.GetAllDonations)
 	donationRoutes.GET("/:id", donationCtrl.GetDonationByID)
-
-	// authenticated group
-	auth := donationRoutes.Group("")
-	auth.Use(middleware.JWTMiddleware)
-
-	auth.POST("", donationCtrl.CreateDonation)
-	auth.PUT("/:id", donationCtrl.UpdateDonation)
-	auth.PATCH("/:id", donationCtrl.PatchDonation)
-	auth.DELETE("/:id", donationCtrl.DeleteDonation)
+	donationRoutes.POST("", donationCtrl.CreateDonation)
+	donationRoutes.PUT("/:id", donationCtrl.UpdateDonation)
+	donationRoutes.PATCH("/:id", donationCtrl.PatchDonation)
+	donationRoutes.DELETE("/:id", donationCtrl.DeleteDonation)
 }
