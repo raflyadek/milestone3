@@ -2110,6 +2110,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "week": {
+                    "description": "Format: YYYYMMDD (e.g., 20241204)",
                     "type": "integer"
                 }
             }
