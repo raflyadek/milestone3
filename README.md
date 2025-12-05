@@ -214,7 +214,6 @@ be/
 │   │   └── mock_*.go
 │   │
 │   └── utils/                           # Utility functions
-│       ├── aplouder.go                  # File upload helper
 │       ├── auth.go                      # Auth utilities
 │       ├── jwt.go                       # JWT token utilities
 │       ├── response.go                  # Standardized API responses
@@ -225,7 +224,6 @@ be/
 │   │   ├── admin.go                     # Admin role check
 │   │   ├── auth.go                      # JWT authentication
 │   │   ├── logging.go                   # Request logging
-│   │   └── role.go                      # Role-based access control
 │   │
 │   └── routes/                          # API route definitions
 │       ├── admin_routes.go
