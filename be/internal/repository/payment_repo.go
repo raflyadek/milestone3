@@ -78,26 +78,46 @@ func (pr *PaymentRepo) CreateMidtrans(payment entity.Payment, orderId string) (r
 
 func (pr *PaymentRepo) CheckPaymentStatusMidtrans(orderId string) (res dto.CheckPaymentStatusResponse, err error) {
 	var payment entity.Payment
+	var auction entity.AuctionItem
+
 	serverKey := os.Getenv("MIDTRANS_SERVER_KEY")
 	c := coreapi.Client{}
-	c.New(serverKey, midtrans.Sandbox)	
+	c.New(serverKey, midtrans.Sandbox)
 
-	resp, err := c.CheckTransaction(orderId)
-	if err != nil {
-		return dto.CheckPaymentStatusResponse{}, err
+	resp, _ := c.CheckTransaction(orderId)
+	// if err != nil {
+	// 	return res, err
+	// }
+
+	// assign into named variable res
+	res = dto.CheckPaymentStatusResponse{
+		OrderId:        resp.OrderID,
+		TransactionId:  resp.TransactionID,
+		PaymentStatus:  resp.TransactionStatus,
 	}
 
-	respon := dto.CheckPaymentStatusResponse{
-		OrderId: resp.OrderID,
-		TransactionId: resp.TransactionID,
-		PaymentStatus: resp.TransactionStatus,
-	}
 	switch resp.TransactionStatus {
 	case "settlement":
-		pr.db.Model(&payment).WithContext(pr.ctx).Where("order_id = ?", orderId).Update("status", "paid")
+		pr.db.Model(&payment).
+			WithContext(pr.ctx).
+			Where("order_id = ?", orderId).
+			Update("status", "paid")
+
 	case "cancel", "expire":
-		pr.db.Model(&payment).WithContext(pr.ctx).Where("order_id = ?", orderId).Update("status", "failed")
+		// update auction to scheduled
+		pr.db.Model(&auction).
+			Where("id = (?)",
+				pr.db.Model(&payment).
+					Select("auction_item_id").
+					Where("order_id = ?", orderId),
+			).Update("status", "scheduled")
+
+		// update payment to failed
+		pr.db.Model(&payment).
+			WithContext(pr.ctx).
+			Where("order_id = ?", orderId).
+			Update("status", "failed")
 	}
-	
-	return respon, nil
+
+	return res, nil
 }
