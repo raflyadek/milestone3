@@ -1,4 +1,4 @@
-# Your Donate Rise - Donation & Auction Platform
+# Youth Donate Rise - Donation & Auction Platform
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org/)
 [![Echo Framework](https://img.shields.io/badge/Echo-v4-00ADD8?style=flat&logo=go)](https://echo.labstack.com/)
